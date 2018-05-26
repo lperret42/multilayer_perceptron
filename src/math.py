@@ -97,3 +97,22 @@ def sqrt(x, epsilon=10e-15):
         old_error_v = error_v
 
     return u if error_u <= error_v else v
+
+def logistic(x):
+    return 1. / (1 + exp(-x)) if -x <= 500 else 0
+
+def d_logistic(x):
+    tmp = logistic(x)
+    return tmp * (1 - tmp)
+
+def relu(x):
+    return 0 if x < 0 else x
+
+def d_relu(x):
+    return 0 if x < 0 else 1
+
+def tanh(x):
+    return 2. / (1 + exp(-2 * x)) -1
+
+def d_tanh(x):
+    return 1. - tanh(x) ** 2
