@@ -4,6 +4,7 @@ import argparse
 import json
 import numpy as np
 from src import dataframe
+from src.math import softmax
 from src.activations import Relu
 from src.layer import Layer
 from src.mlp import Mlp
@@ -21,6 +22,7 @@ def transform_label(Y, label):
     return [1 if y == label else 0 for y in Y]
 
 def main():
+    print(softmax([2, 3]))
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features()
