@@ -18,8 +18,9 @@ def parse_arguments():
 
     return args
 
-def transform_label(Y, label):
-    return [1 if y == label else 0 for y in Y]
+def transform_label(Y):
+    existings = list(set(Y))
+    return [[1 if y == existing else 0 for existing in existings] for y in Y]
 
 def main():
     print(softmax([2, 3]))
@@ -31,7 +32,7 @@ def main():
     df.standardize()
     X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features])
     X = X.T
-    Y = transform_label(df.standardized['diagnosis'], 'M')
+    Y = transform_label(df.standardized['diagnosis'])
     print(Y)
     relu = Relu()
     layer = Layer(3, 3)
@@ -39,6 +40,7 @@ def main():
     mlp = Mlp()
     mlp.fit(X, Y)
     predict = mlp.predict(X[0])
+    print("cost:", mlp.cost(X, Y))
     print("predict:", predict)
     print("sum(predict):", sum(predict))
 

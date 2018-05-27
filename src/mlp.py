@@ -15,9 +15,9 @@ class Mlp(object):
         ) for _ in range(self.nb_layers)]
         [layer.init() for layer in self.layers]
 
-    def fit(self, X, Y, epochs=100):
+    def fit(self, X, Y, epochs=300):
         self.layers[0] = Layer(self.nb_neurals_by_hidden_layer, X.shape[1])
-        self.layers.append(Layer(len(list(set(Y))), self.nb_neurals_by_hidden_layer, output_layer=True))
+        self.layers.append(Layer(len(Y[0]), self.nb_neurals_by_hidden_layer, activation="softmax", output_layer=True))
         self.layers[0].init()
         self.layers[-1].init()
 
@@ -26,12 +26,19 @@ class Mlp(object):
         while epoch < epochs:
             predictions = self.predict(X[i])
             errors = Y[i] - predictions
-            print(errors)
+            print("i:", i)
+            print("Y[i]:", Y[i])
+            print("predictions:", predictions)
+            print("errors:", errors)
             epoch += 1
-            i = (i + 1) % (X.shape[1])
+            i = (i + 1) % (X.shape[0])
 
     def predict(self, X):
         X = X.T
         for k, layer in enumerate(self.layers):
             X = layer.eval(X)
         return X
+
+    def cost(self, X, Y):
+        return sum([(1. / 2) *sum([a ** 2 for a in (self.predict(x) - y)]) for
+                            x, y in zip(X, Y)])

@@ -120,3 +120,7 @@ def d_tanh(x):
 def softmax(X):
     exps = [exp(x) for x in X]
     return [x / sum(exps) for x in exps]
+
+def d_softmax(X):
+    tmp = softmax(X)
+    return tmp * (1 - tmp)
