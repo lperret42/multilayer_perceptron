@@ -12,8 +12,10 @@ class Activation(object):
                         [self.function(e) for e in x]
 
     def get_derivative(self, x):
+        #print("derivative")
+        #print("self.name:", self.name)
         return self.derivative(x) if self.name == "softmax" else\
-                        [self.derivative(e) for e in X]
+                        [self.derivative(e) for e in x]
 
 class Relu(Activation):
     def __init__(self):

@@ -23,7 +23,6 @@ def transform_label(Y):
     return [[1 if y == existing else 0 for existing in existings] for y in Y]
 
 def main():
-    print(softmax([2, 3]))
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features()
@@ -32,16 +31,18 @@ def main():
     df.standardize()
     X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features])
     X = X.T
+    #for n in range(len(X)):
+    #    print(X[n])
+    #return 
     Y = transform_label(df.standardized['diagnosis'])
-    print(Y)
-    relu = Relu()
-    layer = Layer(3, 3)
-    layer.init()
     mlp = Mlp()
     mlp.fit(X, Y)
-    predict = mlp.predict(X[0])
     print("cost:", mlp.cost(X, Y))
-    print("predict:", predict)
+    for n in range(len(X)):
+        #print(X[n])
+        predict = mlp.predict(X[n])
+        print("predict n : ", predict, "    real:", Y[n])
+    mlp.print_weights()
     print("sum(predict):", sum(predict))
 
 if __name__ == '__main__':

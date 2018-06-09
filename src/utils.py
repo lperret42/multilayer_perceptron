@@ -1,4 +1,10 @@
 import csv
+import numpy as np
+
+def get_random_index(nb_elem, batch_size):
+    index = list(range(nb_elem))
+    np.random.shuffle(index)
+    return index[:batch_size]
 
 def get_data(csv_file):
     with open(csv_file, 'r') as csvfile:

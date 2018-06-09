@@ -1,5 +1,6 @@
-from src.utils import is_int, quicksort
+import numpy as np
 from math import exp, log
+from src.utils import is_int, quicksort
 
 def abs(x):
     return -x if x < 0 else x
@@ -98,6 +99,9 @@ def sqrt(x, epsilon=10e-15):
 
     return u if error_u <= error_v else v
 
+def my_exp(x):
+    return exp(x) if x <= 500 else 10e10
+
 def logistic(x):
     return 1. / (1 + exp(-x)) if -x <= 500 else 0
 
@@ -118,8 +122,9 @@ def d_tanh(x):
     return 1. - tanh(x) ** 2
 
 def softmax(X):
-    exps = [exp(x) for x in X]
-    return [x / sum(exps) for x in exps]
+    #print("X:", X)
+    exps = [my_exp(x) for x in X]
+    return np.array([x / sum(exps) for x in exps])
 
 def d_softmax(X):
     tmp = softmax(X)
