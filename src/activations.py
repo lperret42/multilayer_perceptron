@@ -1,3 +1,4 @@
+import numpy as np
 from src.math import relu, d_relu, logistic, d_logistic, tanh, d_tanh,\
                      softmax, d_softmax
 
@@ -9,13 +10,13 @@ class Activation(object):
 
     def get_function(self, x):
         return self.function(x) if self.name == "softmax" else\
-                        [self.function(e) for e in x]
+                        np.array([self.function(e) for e in x])
 
     def get_derivative(self, x):
         #print("derivative")
         #print("self.name:", self.name)
         return self.derivative(x) if self.name == "softmax" else\
-                        [self.derivative(e) for e in x]
+                        np.array([self.derivative(e) for e in x])
 
 class Relu(Activation):
     def __init__(self):

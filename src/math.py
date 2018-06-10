@@ -109,8 +109,8 @@ def d_logistic(x):
     tmp = logistic(x)
     return tmp * (1 - tmp)
 
-def relu(x):
-    return 0 if x < 0 else x
+def relu(x, alpha=1):
+    return 0 if x < 0 else x * alpha
 
 def d_relu(x):
     return 0 if x < 0 else 1
@@ -122,10 +122,12 @@ def d_tanh(x):
     return 1. - tanh(x) ** 2
 
 def softmax(X):
-    #print("X:", X)
+    #print("X in softmax:", X)
     exps = [my_exp(x) for x in X]
+    #print("exps in softmax:", exps)
     return np.array([x / sum(exps) for x in exps])
 
 def d_softmax(X):
+    #print("in d_softmax")
     tmp = softmax(X)
-    return tmp * (1 - tmp)
+    return np.array(tmp * (1 - tmp))
