@@ -6,7 +6,8 @@ DEBUG = True
 DEBUG = False
 
 class Mlp(object):
-    def __init__(self, dim_input, dim_output, hidden_layer_sizes=[4, 4], activation="relu"):
+    #def __init__(self, dim_input, dim_output, hidden_layer_sizes=[4, 4], activation="logistic"):
+    def __init__(self, dim_input, dim_output, hidden_layer_sizes=[], activation="logistic"):
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
         self.__init_layers__(dim_input, dim_output, activation, hidden_layer_sizes)
@@ -28,19 +29,25 @@ class Mlp(object):
         )]
         self.layers[-1].init()
 
-    def fit(self, X, Y, learning_rate=1e-4, batch_size=32, epochs=5000, momentum=0.9):
+    def fit(self, X, Y, learning_rate=1e-2, batch_size=8, epochs=10000, momentum=0.75):
         self.print_layers()
         i = 0
         epoch = 0
         while epoch < epochs:
+            #print("*************** new epoch *******************")
             index = get_random_index(len(X), batch_size)
             predictions = [list(self.predict(X[i])) for i in index]
             observations = [Y[i] for i in index]
+            #self.show_one_result(X[index[0]], Y[index[0]])
             if DEBUG:
                 print("predictions:", predictions)
                 print("observations:", observations)
-            errors = [sum([predictions[i][k] - observations[i][k] for i in range(len(predictions))]) \
+            errors = [sum([observations[i][k] - predictions[i][k] for i in range(len(predictions))]) \
                         for k in range(len(predictions[0]))]
+            #print("X:", X[index[0]])
+            #print("predict:", self.predict(X[index[0]]))
+            #print("Y:", Y[index[0]])
+            #print("errors: ", errors)
             self.get_local_gradients(errors)
             self.update_weights(learning_rate, momentum)
             if epoch % 100 == 0:
@@ -48,27 +55,23 @@ class Mlp(object):
                 print(self.predict(X[0]))
             epoch += 1
             i = (i + 1) % len(X)
+            #self.show_one_result(X[index[0]], Y[index[0]])
 
     def get_local_gradients(self, errors):
         #print("begin get_local_gradients")
         for n in reversed(range(1, self.nb_layers)):
-            if DEBUG:
-                print("n:", n)
             layer = self.layers[n]
             if DEBUG:
                 print("n:", n, "neurals:", layer.neurals)
-            if DEBUG:
                 print("n:", n, "weights:", layer.weights)
-            if DEBUG:
                 print("n:", n, "errors:", errors)
-            if DEBUG:
                 print("n:", n, "layer.activation.get_derivative(layer.neurals",
                         layer.activation.get_derivative(layer.neurals))
             if n == self.nb_layers - 1:
-                layer.local_gradients = errors *\
-                        layer.activation.get_derivative(layer.neurals)
+                layer.local_gradients = errors * (layer.neurals * (1 - layer.neurals))
             else:
-                layer.local_gradients = layer.activation.get_derivative(layer.neurals[1:]) *\
+                #layer.local_gradients = layer.activation.get_derivative(layer.neurals[1:]) *\
+                layer.local_gradients = layer.neurals[1:] * (1 - layer.neurals[1:]) *\
                     np.array([sum([self.layers[n+1].local_gradients[k] * self.layers[n+1].weights[k][j] for\
                     k in range(len(self.layers[n+1].local_gradients))]) for j in range(len(layer.neurals[1:]))])
             if DEBUG:
@@ -97,32 +100,36 @@ class Mlp(object):
                     """
                     self.layers[n].deltas[j][i] = learning_rate * self.layers[n].local_gradients[j] *\
                         self.layers[n-1].neurals[i]
-                    self.layers[n].weights[j][i] -= self.layers[n].deltas[j][i]
+                    self.layers[n].weights[j][i] += self.layers[n].deltas[j][i]
 
         if DEBUG:
             print("end update_weights")
 
-    def predict(self, X):
+    def predict(self, x):
         if DEBUG:
             print("***************Predict***********************")
-            print("X initial:", X)
-        X = X.T
+            print("x initial:", x)
+        x = x.T
         for k, layer in enumerate(self.layers):
             if DEBUG:
                 print("k:", k)
-            layer.eval(X)
-            X = layer.neurals
+            layer.eval(x)
+            x = layer.neurals
             if DEBUG:
-                print("X after layer {}:".format(k), X)
+                print("x after layer {}:".format(k), x)
 
         if DEBUG:
             print()
        # print("end predict")
-        return X
+        return x
 
     def cost(self, X, Y):
-        return sum([(1. / 2) *sum([a ** 2 for a in (self.predict(x) - y)]) for
+        return sum([(1. / 2) * sum([a ** 2 for a in (self.predict(x) - y)]) for
                             x, y in zip(X, Y)])
+
+    def show_one_result(self, x, y):
+        prediction = self.predict(x)
+        print("prediction: {}     real: {}".format(prediction, y))
 
     def print_weights(self):
         for k, layer in enumerate(self.layers):

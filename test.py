@@ -29,7 +29,9 @@ def main():
     df.digitalize()
     df.replace_nan()
     df.standardize()
-    X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features and
+    #X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features and
+    #                                    feature != "Index"])
+    X = np.array([x for feature, x in df.data.items() if feature in df.numerical_features and
                                         feature != "Index"])
     X = X.T
     np.random.shuffle(X)
@@ -37,21 +39,21 @@ def main():
     #for x in X:
     #    print(x)
     #return 
-    #Y = transform_label(df.standardized['diagnosis'])
-    Y = transform_label(df.standardized['Hogwarts House'])
+    Y = transform_label(df.standardized['iris'])
+    #Y = transform_label(df.standardized['Hogwarts House'])
     dim_input, dim_output = len(X[0]), len(Y[0])
     mlp = Mlp(dim_input, dim_output)
-    
+    """
     for n in range(50):
         predict = mlp.predict(X[n])
         print("predict n : ", predict, "    real:", Y[n])
     return 
-
+    """
     mlp.print_weights()
     mlp.fit(X, Y)
     print("cost:", mlp.cost(X, Y))
     #for n in range(len(X)):
-    for n in range(10):
+    for n in range(30):
         #print(X[n])
         predict = mlp.predict(X[n])
         print("predict n : ", predict, "    real:", Y[n])

@@ -44,10 +44,11 @@ class Layer(object):
             print("unknown activation function")
 
     def init(self):
+        coef = 2.
         if self.input_layer:
-            self.weights = (2 * (np.random.rand(self.nb_neural, self.nb_neural_prev + 1))) - 1
+            self.weights = (coef * (np.random.rand(self.nb_neural, self.nb_neural_prev + 1))) - coef / 2
         else:
-            self.weights = (2 * (np.random.rand(self.nb_neural, self.nb_neural_prev + 1))) - 1
+            self.weights = (coef * (np.random.rand(self.nb_neural, self.nb_neural_prev + 1))) - coef / 2
         self.deltas = np.array([np.array([np.float64(0) for _ in range(self.nb_neural_prev + 1)]) for
                 _ in range(self.nb_neural)])
 

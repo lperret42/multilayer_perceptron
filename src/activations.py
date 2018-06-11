@@ -13,8 +13,6 @@ class Activation(object):
                         np.array([self.function(e) for e in x])
 
     def get_derivative(self, x):
-        #print("derivative")
-        #print("self.name:", self.name)
         return self.derivative(x) if self.name == "softmax" else\
                         np.array([self.derivative(e) for e in x])
 

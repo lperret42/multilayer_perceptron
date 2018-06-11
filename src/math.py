@@ -100,7 +100,8 @@ def sqrt(x, epsilon=10e-15):
     return u if error_u <= error_v else v
 
 def my_exp(x):
-    return exp(x) if x <= 500 else 10e10
+    #return exp(x) if x <= 500 else 10e10
+    return exp(x)
 
 def logistic(x):
     return 1. / (1 + exp(-x)) if -x <= 500 else 0
