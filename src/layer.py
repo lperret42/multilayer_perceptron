@@ -7,7 +7,7 @@ DEBUG = False
 
 class Layer(object):
     def __init__(self, nb_neural, nb_neural_prev, activation="relu",
-                       bias=1, input_layer=False,  output_layer=False):
+                       bias=0.1, input_layer=False,  output_layer=False):
         self.__init_activation__(activation)
         self.nb_neural = nb_neural
         self.neurals = np.array([])
@@ -44,13 +44,16 @@ class Layer(object):
             print("unknown activation function")
 
     def init(self):
-        coef = 2.
-        if self.input_layer:
-            self.weights = (coef * (np.random.rand(self.nb_neural, self.nb_neural_prev + 1))) - coef / 2
-        else:
-            self.weights = (coef * (np.random.rand(self.nb_neural, self.nb_neural_prev + 1))) - coef / 2
+        coef = 1
+        self.weights = ((coef * (np.random.rand(self.nb_neural, self.nb_neural_prev + 1))) - coef / 2).astype(np.float64)
+
+        #for weight in self.weights:
+        #    weight[0] = 1
+
+            #self.weights = np.random.rand(self.nb_neural, self.nb_neural_prev + 1)
         self.deltas = np.array([np.array([np.float64(0) for _ in range(self.nb_neural_prev + 1)]) for
                 _ in range(self.nb_neural)])
+
 
     def eval(self, X):
         if self.input_layer:

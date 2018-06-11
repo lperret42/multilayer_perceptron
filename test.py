@@ -29,10 +29,10 @@ def main():
     df.digitalize()
     df.replace_nan()
     df.standardize()
-    #X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features and
+    X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features and
+                                        feature != "Index"]).astype(np.float64)
+    #X = np.array([x for feature, x in df.data.items() if feature in df.numerical_features and
     #                                    feature != "Index"])
-    X = np.array([x for feature, x in df.data.items() if feature in df.numerical_features and
-                                        feature != "Index"])
     X = X.T
     np.random.shuffle(X)
     #X = np.insert(X, 0,  [1 for _ in X[0]], axis=0)
@@ -55,7 +55,7 @@ def main():
     #for n in range(len(X)):
     for n in range(30):
         #print(X[n])
-        predict = mlp.predict(X[n])
+        predict = mlp.predict(X[n], debug=True)
         print("predict n : ", predict, "    real:", Y[n])
     mlp.print_weights()
     print("sum(predict):", sum(predict))
