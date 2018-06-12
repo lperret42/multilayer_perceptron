@@ -47,24 +47,15 @@ class Layer(object):
             print("unknown activation function")
 
     def init(self):
-        coef = 10
+        coef = 1
         self.weights = ((coef * (np.random.rand(self.nb_neural, self.nb_neural_prev))) - coef / 2).astype(np.float64)
-        self.biases = (0 if self.output_layer else 1) * ((coef * (np.random.rand(self.nb_neural))) - coef / 2).astype(np.float64)
-        #for weight in self.weights:
-        #    weight[0] = 1
-
-            #self.weights = np.random.rand(self.nb_neural, self.nb_neural_prev + 1)
+        self.biases = ((coef * (np.random.rand(self.nb_neural))) - coef / 2).astype(np.float64)
         self.deltas = np.array([np.array([np.float64(0) for _ in range(self.nb_neural_prev)]) for
                 _ in range(self.nb_neural)])
 
 
     def eval(self, X):
         if self.input_layer:
-            neurals = np.array(X)
+            self.neurals = np.array(X)
         else:
-            if DEBUG:
-                print("self.weights.dot(X)):", self.weights.dot(X))
-            neurals = np.array(self.activation.get_function(self.weights.dot(X))) + self.biases
-        #if not self.output_layer:
-        #    neurals = np.insert(neurals, 0, self.bias, axis=0)      #add bias
-        self.neurals = neurals
+            self.neurals = np.array(self.activation.get_function(self.weights.dot(X) + self.biases))
