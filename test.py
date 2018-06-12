@@ -53,7 +53,8 @@ def main():
     mlp.fit(X, Y)
     print("cost:", mlp.cost(X, Y))
     #for n in range(len(X)):
-    for n in range(30):
+    print("************************************************************************")
+    for n in range(10):
         #print(X[n])
         predict = mlp.predict(X[n], debug=True)
         print("predict n : ", predict, "    real:", Y[n])
