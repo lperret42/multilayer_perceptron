@@ -23,7 +23,7 @@ def transform_label(Y):
     return [[1 if y == existing else 0 for existing in existings] for y in Y]
 
 def main():
-    output_label = 'diagnosis'
+    output_label = 'iris'
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features()

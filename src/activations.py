@@ -8,11 +8,11 @@ class Activation(object):
         self.function = function
         self.derivative = derivative
 
-    def get_function(self, x):
-        return self.function(x) if self.name == "softmax" else\
+    def func(self, x):
+        return np.array(self.function(x)) if self.name == "softmax" else\
                         np.array([self.function(e) for e in x])
 
-    def get_derivative(self, x):
+    def deriv(self, x):
         return self.derivative(x) if self.name == "softmax" else\
                         np.array([self.derivative(e) for e in x])
 
