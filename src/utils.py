@@ -6,6 +6,14 @@ def get_random_index(nb_elem, batch_size):
     np.random.shuffle(index)
     return index[:batch_size]
 
+def get_randomized_data(X, Y):
+    if len(X) != len(Y):
+        print("nb input and nb output are not equals !")
+    index = get_random_index(len(X), len(Y))
+    X_randomized = [X[i] for i in index]
+    Y_randomized = [Y[i] for i in index]
+    return X_randomized, Y_randomized
+
 def get_data(csv_file):
     with open(csv_file, 'r') as csvfile:
         lines  = [line for line in csv.reader(csvfile, delimiter=',')]

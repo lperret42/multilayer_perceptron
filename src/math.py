@@ -39,6 +39,7 @@ def mean_with_empty(lst):
 
 def std(lst):
     mu = mean(lst)
+
     return sqrt(sum([(x - mu) ** 2 for x in lst]) / (len(lst) - 1))
 
 def ceil(f):
@@ -99,19 +100,16 @@ def sqrt(x, epsilon=10e-15):
 
     return u if error_u <= error_v else v
 
-def my_exp(x):
-    #return exp(x) if x <= 500 else 10e10
-    return exp(x)
 
 def logistic(x):
-    return 1. / (1 + exp(-x)) if -x <= 500 else 0
+    return 1. / (1 + exp(-x))
 
 def d_logistic(x):
     tmp = logistic(x)
     return tmp * (1 - tmp)
 
-def relu(x, alpha=1):
-    return 0 if x < 0 else x * alpha
+def relu(x):
+    return 0 if x < 0 else x
 
 def d_relu(x):
     return 0 if x < 0 else 1
@@ -123,12 +121,9 @@ def d_tanh(x):
     return 1. - tanh(x) ** 2
 
 def softmax(X):
-    #print("X in softmax:", X)
-    exps = [my_exp(x) for x in X]
-    #print("exps in softmax:", exps)
+    exps = [exp(x) for x in X]
     return np.array([x / sum(exps) for x in exps])
 
 def d_softmax(X):
-    #print("in d_softmax")
     tmp = softmax(X)
     return np.array(tmp * (1 - tmp))

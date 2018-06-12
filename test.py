@@ -23,43 +23,23 @@ def transform_label(Y):
     return [[1 if y == existing else 0 for existing in existings] for y in Y]
 
 def main():
+    output_label = 'diagnosis'
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features()
     df.digitalize()
     df.replace_nan()
     df.standardize()
-    X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features and
-                                        feature != "Index"]).astype(np.float64)
-    #X = np.array([x for feature, x in df.data.items() if feature in df.numerical_features and
-    #                                    feature != "Index"])
+    X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features])
     X = X.T
-    #np.random.shuffle(X)
-    #X = np.insert(X, 0,  [1 for _ in X[0]], axis=0)
-    #for x in X:
-    #    print(x)
-    #return 
-    #Y = transform_label(df.data['diagnosis'])
-    Y = transform_label(df.standardized['Hogwarts House'])
+    Y = transform_label(df.data[output_label])
     dim_input, dim_output = len(X[0]), len(Y[0])
     mlp = Mlp(dim_input, dim_output)
-    """
-    for n in range(50):
+    mlp.fit(X, Y)
+    for n in range(len(Y)):
         predict = mlp.predict(X[n])
         print("predict n : ", predict, "    real:", Y[n])
-    return 
-    """
-    mlp.print_weights()
-    mlp.fit(X, Y)
-    print("cost:", mlp.cost(X, Y))
-    #for n in range(len(X)):
-    print("************************************************************************")
-    for n in range(len(Y)):
-        #print(X[n])
-        predict = mlp.predict(X[n], debug=True)
-        print("predict n : ", predict, "    real:", Y[n])
-    #mlp.print_weights()
-    #print("sum(predict):", sum(predict))
+    print("precision:", mlp.get_precision(X, Y))
 
 if __name__ == '__main__':
     main()
