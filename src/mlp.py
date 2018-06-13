@@ -4,7 +4,7 @@ from src.layer import Layer
 from src.utils import get_random_index, get_randomized_data
 
 class Mlp(object):
-    def __init__(self, dim_input, dim_output, hidden_layer_sizes=(16, 8, 4,), activation="logistic"):
+    def __init__(self, dim_input, dim_output, hidden_layer_sizes=(16, 4,), activation="logistic"):
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
         self.dim_input = dim_input
@@ -26,7 +26,7 @@ class Mlp(object):
             output_layer=True,
         )]
 
-    def fit(self, X, Y, learning_rate=0.5, batch_size=1, epochs=500000, momentum=0.5):
+    def fit(self, X, Y, learning_rate=0.5, batch_size=1, epochs=20000, momentum=0.5):
         X, Y = get_randomized_data(X, Y)
         i = 0
         epoch = 0
