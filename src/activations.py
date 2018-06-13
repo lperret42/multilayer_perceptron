@@ -18,24 +18,16 @@ class Activation(object):
 
 class Relu(Activation):
     def __init__(self):
-        self.name = "relu"
-        self.function = relu
-        self.derivative = d_relu
+        Activation.__init__(self, relu, d_relu, name="relu")
 
 class Logistic(Activation):
     def __init__(self):
-        self.name = "logistic"
-        self.function = logistic
-        self.derivative = d_logistic
+        Activation.__init__(self, logistic, d_logistic, name="logistic")
 
 class Tanh(Activation):
     def __init__(self):
-        self.name = "tanh"
-        self.function = tanh
-        self.derivative = d_tanh
+        Activation.__init__(self, tanh, d_tanh, name="tanh")
 
 class Softmax(Activation):
     def __init__(self):
-        self.name = "softmax"
-        self.function = softmax
-        self.derivative = d_softmax
+        Activation.__init__(self, softmax, d_softmax, name="softmax")

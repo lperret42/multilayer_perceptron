@@ -18,8 +18,8 @@ class Layer(object):
         self.weights = np.array([])
         self.local_gradients = np.array([])
 
-        self.__init_activation__(activation)
-        self.__init_weights_biases_deltas__()
+        self.__init_activation(activation)
+        self.__init_weights_biases_deltas()
 
     def __str__(self):
         ret = ""
@@ -33,7 +33,7 @@ class Layer(object):
         ret += "output_layer: {}\n".format(self.output_layer)
         return ret
 
-    def __init_activation__(self, activation_str):
+    def __init_activation(self, activation_str):
         if activation_str == "relu":
             self.activation = Relu()
         elif activation_str == "logistic":
@@ -42,10 +42,8 @@ class Layer(object):
             self.activation = Tanh()
         elif activation_str == "softmax":
             self.activation = Softmax()
-        else:
-            print("unknown activation function")
 
-    def __init_weights_biases_deltas__(self):
+    def __init_weights_biases_deltas(self):
         if not self.input_layer:
             c = 1
             self.weights = c * (np.random.rand(self.size, self.input_size)) - c / 2

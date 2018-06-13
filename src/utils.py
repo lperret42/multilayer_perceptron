@@ -14,6 +14,15 @@ def get_randomized_data(X, Y):
     Y_randomized = [Y[i] for i in index]
     return X_randomized, Y_randomized
 
+def sum_with_empty(lst):
+    s = 0
+    for elem in lst:
+        s += elem if elem != "" else 0
+    return s
+
+def mean_with_empty(lst):
+    return sum_with_empty(lst) / len([elem for elem in lst if elem != ""])
+
 def get_data(csv_file):
     with open(csv_file, 'r') as csvfile:
         lines  = [line for line in csv.reader(csvfile, delimiter=',')]

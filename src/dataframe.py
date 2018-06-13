@@ -1,6 +1,7 @@
-from src.utils import get_data, keep_only_float, quicksort, is_float, is_list_num
-from src.math import min, max, mean, std, quartile_n, sqrt, sum_with_empty, mean_with_empty
+import numpy as np
 import random
+from src.utils import get_data, keep_only_float, quicksort, is_float, is_list_num,\
+                      sum_with_empty, mean_with_empty
 
 def read_csv(csvfile):
     df = DataFrame()
@@ -31,12 +32,12 @@ class DataFrame(object):
                 float_sorted = quicksort(only_float)
                 description.setdefault("Field", []).append(feature)
                 description.setdefault("Count", []).append(float(len(float_sorted)))
-                description.setdefault("Mean", []).append(mean(float_sorted))
-                description.setdefault("Std", []).append(std(float_sorted))
+                description.setdefault("Mean", []).append(np.mean(float_sorted))
+                description.setdefault("Std", []).append(np.std(float_sorted))
                 description.setdefault("Min", []).append(min(float_sorted))
-                description.setdefault("25%", []).append(quartile_n(float_sorted, 1))
-                description.setdefault("50%", []).append(quartile_n(float_sorted, 2))
-                description.setdefault("75%", []).append(quartile_n(float_sorted, 3))
+                description.setdefault("25%", []).append(np.percentile(float_sorted, 25))
+                description.setdefault("50%", []).append(np.percentile(float_sorted, 50))
+                description.setdefault("75%", []).append(np.percentile(float_sorted, 75))
                 description.setdefault("Max", []).append(max(float_sorted))
 
         return description
@@ -94,8 +95,8 @@ class DataFrame(object):
                 continue
             only_float = keep_only_float(values)
             if len(only_float) > 0:
-                mu = mean(only_float)
-                sigma = sqrt(sum([(x - mu)**2 for x in only_float]))
+                mu = np.mean(only_float)
+                sigma = np.sqrt(sum([(x - mu)**2 for x in only_float]))
                 self.standardized[feature] = [(x - mu) / sigma for x in only_float]
                 self.stand_coefs[feature] = {"mu": mu, "sigma":sigma}
             else:

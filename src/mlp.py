@@ -1,15 +1,18 @@
 import numpy as np
+from math import log
 from src.layer import Layer
 from src.utils import get_random_index, get_randomized_data
 
 class Mlp(object):
-    def __init__(self, dim_input, dim_output, hidden_layer_sizes=[4], activation="tanh"):
+    def __init__(self, dim_input, dim_output, hidden_layer_sizes=(16, 8, 4,), activation="logistic"):
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
-        self.__init_layers__(dim_input, dim_output, activation, hidden_layer_sizes)
+        self.dim_input = dim_input
+        self.dim_output = dim_output
+        self.__init_layers(activation, hidden_layer_sizes)
 
-    def __init_layers__(self, dim_input, dim_output, activation, hidden_layer_sizes):
-        self.layers = [Layer(dim_input, 0, activation=activation, input_layer=True)]
+    def __init_layers(self, activation, hidden_layer_sizes):
+        self.layers = [Layer(self.dim_input, 0, activation=None, input_layer=True)]
         for hidden_layer_size in hidden_layer_sizes:
             self.layers += [Layer(
                 hidden_layer_size,
@@ -17,13 +20,13 @@ class Mlp(object):
                 activation=activation,
             )]
         self.layers += [Layer(
-            dim_output,
+            self.dim_output,
             self.layers[-1].size,
             activation="softmax",
             output_layer=True,
         )]
 
-    def fit(self, X, Y, learning_rate=0.1, batch_size=1, epochs=20000, momentum=0.5):
+    def fit(self, X, Y, learning_rate=0.5, batch_size=1, epochs=500000, momentum=0.5):
         X, Y = get_randomized_data(X, Y)
         i = 0
         epoch = 0
@@ -37,7 +40,11 @@ class Mlp(object):
             self.get_local_gradients(errors)
             self.update_weights(learning_rate, momentum)
             if epoch % 100 == 0:
-                print("cost at epoch {}: {}".format(epoch, self.cost(X, Y)))
+                #print("mean_squared_error at epoch {}: {}".format(epoch, self.mean_squared_error(X, Y)))
+                print("binary_cross_entropy_error at epoch {}: {}".format(
+                    epoch,
+                    self.binary_cross_entropy_error(X, Y),
+                ))
             epoch += 1
             i = (i + 1) % len(X)
 
@@ -74,13 +81,20 @@ class Mlp(object):
             x = layer.neurals
         return x
 
+    def mean_squared_error(self, X, Y):
+        errors = [(self.predict(x) - y) for x, y in zip(X, Y)]
+        return (1 / len(errors)) * sum([e.dot(e) for e in errors])
+
+    def binary_cross_entropy_error(self, X, Y):
+        if self.dim_output != 2:
+            raise Exception("Can't call binary_cross_entropy_error if dim_output != 2")
+        probas = [self.predict(x) for x in X]
+        errors = [y[1] * log(p[1]) + (1 - y[1]) * log(1 - p[1]) for p, y in zip(probas, Y)]
+        return (-1 / len(errors)) * sum(errors)
+
     def predict_label(self, x):
         predict = list(self.predict(x))
         return predict.index(max(predict))
-
-    def cost(self, X, Y):
-        return sum([(1. / 2) * sum([a ** 2 for a in (self.predict(x) - y)]) for
-                            x, y in zip(X, Y)])
 
     def show_one_result(self, x, y):
         prediction = self.predict(x)
@@ -98,7 +112,7 @@ class Mlp(object):
         nb_errors = 0.
         for i in range(len(X)):
             x = X[i]
-            y = Y[i]
+            y = list(Y[i])
             predict_label = self.predict_label(x)
             real_label = y.index(max(y))
             if predict_label != real_label:
