@@ -24,7 +24,7 @@ def transform_label(Y):
     return [np.array([1 if y == existing else 0 for existing in existings]) for y in Y]
 
 def main():
-    output_label = 'diagnosis'     # diagnosis, iris, Hogwarts House
+    output_label = 'iris'     # diagnosis, iris, Hogwarts House
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features()

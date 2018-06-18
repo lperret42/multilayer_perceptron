@@ -26,15 +26,19 @@ class Mlp(object):
             output_layer=True,
         )]
 
-    def fit(self, X, Y, learning_rate=0.5, batch_size=1, epochs=20000, momentum=0.5):
+    def fit(self, X, Y, learning_rate=0.5, batch_size=2, epochs=20000, momentum=0.5):
         X, Y = get_randomized_data(X, Y)
         i = 0
         epoch = 0
         while epoch < epochs:
             index = get_random_index(len(X), batch_size)
-            index = [i]
-            predictions = [list(self.predict(X[i])) for i in index]
+            #index = [i]
+            samples = np.array([X[i] for i in index]).T
+            print("samples:", samples)
+            predictions = self.predict(samples).T
             observations = [Y[i] for i in index]
+            print("predictions:", predictions)
+            print("observations:", observations)
             errors = [np.mean([observations[i][k] - predictions[i][k] for i in
                 range(len(predictions))]) for k in range(len(predictions[0]))]
             self.get_local_gradients(errors)
@@ -50,17 +54,24 @@ class Mlp(object):
 
     def get_local_gradients(self, errors):
         for n in reversed(range(1, self.nb_layers)):
+            print("n:", n)
             layer = self.layers[n]
             layer_n_1 = self.layers[n - 1]
             if n == self.nb_layers - 1:
-                deriv = np.array(layer.activation.deriv(layer.weights.dot(layer_n_1.neurals) +
-                    layer.biases))
-                layer.local_gradients = errors * deriv
+                deriv = layer.derivation(layer.aggregate(layer_n_1.neurals))
+                print("errors:", errors)
+                print("deriv:", deriv)
+                layer.local_gradients = (errors * deriv)
+                print("layer.local_gradients:", layer.local_gradients)
             else:
-                deriv = np.array(layer.activation.deriv(layer.weights.dot(layer_n_1.neurals) +
-                    layer.biases))
+                deriv = layer.derivation(layer.aggregate(layer_n_1.neurals)).T
+                print("weights.T:", self.layers[n+1].weights.T)
+                print("local_gradients:", self.layers[n+1].local_gradients)
+                print("local_gradients.T:", self.layers[n+1].local_gradients.T)
                 errors = self.layers[n+1].weights.T.dot(self.layers[n+1].local_gradients)
-                layer.local_gradients = errors * deriv
+                print("errors:", errors)
+                print("deriv:", deriv)
+                layer.local_gradients = (errors * deriv)
 
     def update_weights(self, learning_rate, momentum):
         for n in range(1, self.nb_layers):
@@ -75,7 +86,7 @@ class Mlp(object):
             layer.biases += learning_rate * layer.local_gradients
 
     def predict(self, x):
-        x = x.T
+        #x = x.T
         for k, layer in enumerate(self.layers):
             layer.eval(x)
             x = layer.neurals

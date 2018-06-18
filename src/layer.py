@@ -47,11 +47,20 @@ class Layer(object):
         if not self.input_layer:
             c = 1
             self.weights = c * (np.random.rand(self.size, self.input_size)) - c / 2
-            self.biases = c * (np.random.rand(self.size)) - c / 2
+            self.biases = (c * (np.random.rand(self.size)) - c / 2).T
             self.deltas = np.zeros((self.size, self.input_size))
+
+    def aggregate(self, X):
+        return np.array([x + self.biases for x in self.weights.dot(X).T])
+
+    def activate(self, X):
+        return np.array([self.activation.func(x) for x in X.T])
+
+    def derivation(self, X):
+        return np.array([self.activation.deriv(x) for x in X.T])
 
     def eval(self, X):
         if self.input_layer:
             self.neurals = np.array(X)
         else:
-            self.neurals = self.activation.func(self.weights.dot(X) + self.biases)
+            self.neurals = self.activate(self.aggregate(X))
