@@ -51,20 +51,33 @@ class Layer(object):
             self.deltas = np.zeros((self.size, self.input_size))
 
     def aggregate(self, X):
-        print("dot:", self.weights.dot(X))
-        print("dot.shape:", self.weights.dot(X).shape)
-        print("self.biases.shape:", np.asarray(self.biases).shape)
-        print("dot + biases:", self.weights.dot(X) + self.biases)
-        print("end aggregate")
+        if DEBUG:
+            print("in aggregate")
+            print("dot:", self.weights.dot(X))
+            print("dot.shape:", self.weights.dot(X).shape)
+            print("self.biases.shape:", np.asarray(self.biases).shape)
+            print("dot + biases:", self.weights.dot(X) + self.biases)
+            print("end aggregate")
         return self.weights.dot(X) + self.biases
 
     def activate(self, X):
-        return np.concatenate([self.activation.func(X[:, col]) for col in range(X.shape[1])], axis=1)
+        if DEBUG:
+            print("in activate")
+            print("X:", X)
+            print("X.shape:", X.shape)
+            print("list x.T:",[x.T for x in X.T])
+            #return np.concatenate([self.activation.func(X[:, col]) for col in range(X.shape[1])], axis=1)
+            #print([self.activation.func(x.T) for x in X])
+            print("after activate:", np.array([self.activation.func(x.T) for x in X.T]))
+        return np.concatenate([self.activation.func(x.T) for x in X.T], axis=1)
 
     def derivation(self, X):
-        return np.concatenate([self.activation.deriv(X[:, col]) for col in range(X.shape[1])], axis=1)
+        return np.concatenate([self.activation.deriv(x.T) for x in X.T], axis=1)
+        #return np.concatenate([self.activation.deriv(X[:, col]) for col in range(X.shape[1])], axis=1)
 
     def eval(self, X):
+        if DEBUG:
+            print("X before eval", X)
         if self.input_layer:
             self.neurals = np.array(X)
         else:

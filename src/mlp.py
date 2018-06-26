@@ -3,8 +3,11 @@ from math import log
 from src.layer import Layer
 from src.utils import get_random_index, get_randomized_data
 
+DEBUG = True
+DEBUG = False
+
 class Mlp(object):
-    def __init__(self, dim_input, dim_output, hidden_layer_sizes=(16, 8,), activation="relu"):
+    def __init__(self, dim_input, dim_output, hidden_layer_sizes=(4,), activation="logistic"):
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
         self.dim_input = dim_input
@@ -27,26 +30,28 @@ class Mlp(object):
             output_layer=True,
         )]
 
-    def fit(self, X, Y, learning_rate=0.5, batch_size=2, epochs=10, momentum=0.9):
+    def fit(self, X, Y, learning_rate=0.5, batch_size=1, epochs=20000, momentum=0):
         X, Y = get_randomized_data(X, Y)
-        i = 0
+        n = 0
         epoch = 0
         while epoch < epochs:
             index = get_random_index(len(X), batch_size)
             samples = np.matrix([X[i] for i in index]).T
+            #print("samples:", samples)
+            #print("samples.shape:", samples.shape)
             predictions = self.predict(samples)
             observations = np.matrix([Y[i] for i in index]).T
             errors = observations - predictions
             self.get_local_gradients(errors)
             self.update_weights(learning_rate, batch_size, momentum)
-            if epoch % 100 == 0:
+            if epoch != 0 and epoch % 100 == 0:
                 print("mean_squared_error at epoch {}: {}".format(epoch, self.mean_squared_error(X, Y)))
-                #rint("binary_cross_entropy_error at epoch {}: {}".format(
+                #print("binary_cross_entropy_error at epoch {}: {}".format(
                 #    epoch,
-                #    self.binary_cross_entropy_error(X, Y),
+                #    self.binary_cross_entropy_error(np.matrix(X).T, Y),
                 #))
             epoch += 1
-            i = (i + 1) % len(X)
+            n = (n + 1) % len(X)
 
     def get_local_gradients(self, errors):
         for n in reversed(range(1, self.nb_layers)):
@@ -71,10 +76,15 @@ class Mlp(object):
             layer.biases += learning_rate * mean_local_gradients
 
     def predict(self, x):
+        if DEBUG:
+            print("****************** new prediction *********************")
+            print("x.shape:", x.shape)
+            print("type(x):", type(x))
         for k, layer in enumerate(self.layers):
             layer.eval(x)
             x = layer.neurals
-            print("x in layer {}:\n".format(k), x)
+            if DEBUG:
+                print("x in layer {}:\n".format(k), x)
         return x
 
     def mean_squared_error(self, X, Y):
@@ -88,7 +98,8 @@ class Mlp(object):
     def binary_cross_entropy_error(self, X, Y):
         if self.dim_output != 2:
             raise Exception("Can't call binary_cross_entropy_error if dim_output != 2")
-        probas = [self.predict(x) for x in X]
+        #probas = [self.predict(x) for x in X]
+        probas = self.predict(X)
         errors = [y[1] * log(p[1]) + (1 - y[1]) * log(1 - p[1]) for p, y in zip(probas, Y)]
         return (-1 / len(errors)) * sum(errors)
 
