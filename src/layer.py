@@ -48,7 +48,8 @@ class Layer(object):
             c = 1
             self.weights = c * (np.random.rand(self.size, self.input_size)) - c / 2
             self.biases = np.matrix((c * (np.random.rand(self.size)) - c / 2)).T
-            self.deltas = np.zeros((self.size, self.input_size))
+            self.d_weights = np.zeros((self.size, self.input_size))
+            self.d_biases = np.zeros((self.size, 1))
 
     def aggregate(self, X):
         if DEBUG:

@@ -25,7 +25,7 @@ def transform_label(Y):
     return [np.array([1 if y == existing else 0 for existing in existings]) for y in Y]
 
 def main():
-    output_label = 'iris'     # diagnosis, iris, Hogwarts House
+    output_label = 'diagnosis'     # diagnosis, iris, Hogwarts House
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features()
@@ -43,7 +43,6 @@ def main():
     samples = [np.matrix(X[i]).T for i in index]
     observations = [np.matrix([Y[i] for i in index]).T]
     for n in range(len(Y)):
-        print("samples[n]:", samples[n])
         predict = mlp.predict(samples[n])
         #print("predict n : ", [round(p, 3) for p in predict], "    real:", Y[n])
         print("predict n : ", predict, "    real:", Y[n])

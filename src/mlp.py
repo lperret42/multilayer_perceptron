@@ -7,7 +7,7 @@ DEBUG = True
 DEBUG = False
 
 class Mlp(object):
-    def __init__(self, dim_input, dim_output, hidden_layer_sizes=(4,), activation="logistic"):
+    def __init__(self, dim_input, dim_output, hidden_layer_sizes=(16,), activation="logistic"):
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
         self.dim_input = dim_input
@@ -30,7 +30,7 @@ class Mlp(object):
             output_layer=True,
         )]
 
-    def fit(self, X, Y, learning_rate=0.5, batch_size=1, epochs=20000, momentum=0):
+    def fit(self, X, Y, learning_rate=0.5, batch_size=400, epochs=3000, momentum=0.95):
         X, Y = get_randomized_data(X, Y)
         n = 0
         epoch = 0
@@ -46,10 +46,10 @@ class Mlp(object):
             self.update_weights(learning_rate, batch_size, momentum)
             if epoch != 0 and epoch % 100 == 0:
                 print("mean_squared_error at epoch {}: {}".format(epoch, self.mean_squared_error(X, Y)))
-                #print("binary_cross_entropy_error at epoch {}: {}".format(
-                #    epoch,
-                #    self.binary_cross_entropy_error(np.matrix(X).T, Y),
-                #))
+                print("binary_cross_entropy_error at epoch {}: {}".format(
+                    epoch,
+                    self.binary_cross_entropy_error(np.matrix(X).T, Y),
+                ))
             epoch += 1
             n = (n + 1) % len(X)
 
@@ -69,11 +69,12 @@ class Mlp(object):
         for n in range(1, self.nb_layers):
             layer = self.layers[n]
             layer_1 = self.layers[n - 1]
-            sum_product = np.sum([layer.local_gradients[:, k] * c.T for k, c in enumerate(layer_1.neurals.T)])
-            layer.deltas = (learning_rate / batch_size) * sum_product + momentum * layer.deltas
-            layer.weights += layer.deltas
+            sum_product = sum([layer.local_gradients[:, k] * c.T for k, c in enumerate(layer_1.neurals.T)])
+            layer.d_weights = (learning_rate / batch_size) * sum_product + momentum * layer.d_weights
+            layer.weights += layer.d_weights
             mean_local_gradients = layer.local_gradients.mean(axis=1)
-            layer.biases += learning_rate * mean_local_gradients
+            layer.d_biases = learning_rate * mean_local_gradients + momentum * layer.d_biases
+            layer.biases += layer.d_biases
 
     def predict(self, x):
         if DEBUG:
