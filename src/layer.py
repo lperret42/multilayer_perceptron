@@ -51,11 +51,11 @@ class Layer(object):
             self.deltas = np.zeros((self.size, self.input_size))
 
     def aggregate(self, X):
-        print("X:", X)
-        print("weights:", self.weights)
         print("dot:", self.weights.dot(X))
-        print("biases:", self.biases)
-        print("aggregate:", self.weights.dot(X) + self.biases)
+        print("dot.shape:", self.weights.dot(X).shape)
+        print("self.biases.shape:", np.asarray(self.biases).shape)
+        print("dot + biases:", self.weights.dot(X) + self.biases)
+        print("end aggregate")
         return self.weights.dot(X) + self.biases
 
     def activate(self, X):
