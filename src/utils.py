@@ -8,7 +8,7 @@ def get_random_index(nb_elem, batch_size):
 
 def get_randomized_data(X, Y):
     if len(X) != len(Y):
-        print("nb input and nb output are not equals !")
+        raise Exception("nb input and nb output are not equals !")
     index = get_random_index(len(X), len(Y))
     X_randomized = [X[i] for i in index]
     Y_randomized = [Y[i] for i in index]

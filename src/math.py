@@ -1,5 +1,5 @@
 import numpy as np
-from math import exp, log
+from math import exp
 
 def logistic(x):
     return 1. / (1 + exp(-x))
@@ -43,4 +43,3 @@ def softmax(X):
 def d_softmax(X):
     tmp = np.array(softmax(X))
     return tmp * (1 - tmp)
-    #return np.array(tmp * (1 - tmp))

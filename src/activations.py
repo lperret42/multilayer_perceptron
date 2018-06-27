@@ -29,3 +29,10 @@ class Tanh(Activation):
 class Softmax(Activation):
     def __init__(self):
         Activation.__init__(self, softmax, d_softmax, name="softmax")
+
+ACTIVATIONS = {
+    "relu": Relu(),
+    "logistic": Logistic(),
+    "tanh": Tanh(),
+    "softmax": Softmax(),
+}
