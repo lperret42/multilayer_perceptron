@@ -5,7 +5,7 @@ from src.utils import get_random_index, get_randomized_data
 
 class Mlp(object):
     def __init__(self, dim_input, dim_output,
-                       hidden_layer_sizes=(16,), activation="tanh"):
+                       hidden_layer_sizes=(16,), activation="logistic"):
 
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
@@ -13,25 +13,15 @@ class Mlp(object):
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, Y, learning_rate=0.3, batch_size=1, epochs=1000, momentum=0.9):
-        #X, Y = get_randomized_data(X, Y)
+    def fit(self, X, Y, learning_rate=0.5, batch_size=64, epochs=2000, momentum=0.95):
         X, Y = self.__preprocess_data(X, Y)
-        print("X:", X)
-        print("Y:", Y)
-        print(X.shape)
-        print(Y.shape)
-        #exit()
+        nb_sample = X.shape[1]
         epoch = 0
         while epoch < epochs:
-            #index = get_random_index(len(X), batch_size)
-            index = np.array(get_random_index(len(X), batch_size))
-            #samples = np.matrix([X[i] for i in index]).T
-            samples = X[:, index]
-            #print("samples.shape:", samples.shape)
-            predictions = self.predict(samples)
+            index = get_random_index(nb_sample, batch_size)
+            sub_samples = X[:, index]
             observations = Y[:, index]
-            #print("predictions:", predictions)
-            #print("observations:", observations)
+            predictions = self.predict(sub_samples)
             errors = observations - predictions
             self.get_local_grad(errors)
             self.update_weights(learning_rate, batch_size, momentum)
@@ -44,7 +34,11 @@ class Mlp(object):
             epoch += 1
         for n in range(Y.shape[1]):
             predict = self.predict(X[:, n])
-            print("predict n : ", predict, "    real:", Y[:, n])
+            print("predict n : ",
+            [round(predict[0][0], 2), round(predict[1][0], 2)],
+            "    real:",
+            float(Y[:, n][0][0]), float(Y[:, n][1][0]),
+            )
 
 
     def get_local_grad(self, errors):
@@ -72,21 +66,14 @@ class Mlp(object):
 
     def predict(self, x):
         for k, layer in enumerate(self.layers):
-            #print("layer {}".format(k), layer)
             layer.eval(x)
             x = layer.neurals
         return x
 
     def mean_squared_error(self, X, Y):
-        #index = get_random_index(len(X), len(X))
-        #samples = np.matrix([X[i] for i in index]).T
-        #predictions = self.predict(samples)
         predictions = self.predict(X)
-        #observations = np.matrix([Y[i] for i in index]).T
         observations = Y
         errors = observations - predictions
-        print(errors)
-        print(errors.shape)
         return (1 / errors.shape[1]) * sum([e.dot(e.T) for e in errors.T])
 
     def binary_cross_entropy_error(self, X, Y):
@@ -146,10 +133,7 @@ class Mlp(object):
         for x in X:
             mu = np.append(mu, np.mean(x))
             sigma = np.append(sigma, np.std(x))
-        print("X.T.shape:", X.T.shape)
-        print("mu.shape:", mu.shape)
         X_preprocessed = ((X.T - mu) / sigma).T
-        #X_preprocessed = ((X.T - 0) / 1).T
         labels = list(set(Y))
         print("labels:", labels)
         Y_preprocessed = np.matrix(
