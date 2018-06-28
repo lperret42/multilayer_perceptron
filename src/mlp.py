@@ -5,7 +5,7 @@ from src.utils import get_random_index, get_randomized_data
 
 class Mlp(object):
     def __init__(self, dim_input, dim_output,
-                       hidden_layer_sizes=(8,), activation="relu"):
+                       hidden_layer_sizes=(16,), activation="tanh"):
 
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
@@ -13,14 +13,25 @@ class Mlp(object):
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, Y, learning_rate=0.3, batch_size=32, epochs=2000, momentum=0.9):
-        X, Y = get_randomized_data(X, Y)
+    def fit(self, X, Y, learning_rate=0.3, batch_size=1, epochs=1000, momentum=0.9):
+        #X, Y = get_randomized_data(X, Y)
+        X, Y = self.__preprocess_data(X, Y)
+        print("X:", X)
+        print("Y:", Y)
+        print(X.shape)
+        print(Y.shape)
+        #exit()
         epoch = 0
         while epoch < epochs:
-            index = get_random_index(len(X), batch_size)
-            samples = np.matrix([X[i] for i in index]).T
+            #index = get_random_index(len(X), batch_size)
+            index = np.array(get_random_index(len(X), batch_size))
+            #samples = np.matrix([X[i] for i in index]).T
+            samples = X[:, index]
+            #print("samples.shape:", samples.shape)
             predictions = self.predict(samples)
-            observations = np.matrix([Y[i] for i in index]).T
+            observations = Y[:, index]
+            #print("predictions:", predictions)
+            #print("observations:", observations)
             errors = observations - predictions
             self.get_local_grad(errors)
             self.update_weights(learning_rate, batch_size, momentum)
@@ -31,6 +42,10 @@ class Mlp(object):
                 #    self.binary_cross_entropy_error(np.matrix(X).T, Y),
                 #))
             epoch += 1
+        for n in range(Y.shape[1]):
+            predict = self.predict(X[:, n])
+            print("predict n : ", predict, "    real:", Y[:, n])
+
 
     def get_local_grad(self, errors):
         for n in reversed(range(1, self.nb_layers)):
@@ -57,16 +72,21 @@ class Mlp(object):
 
     def predict(self, x):
         for k, layer in enumerate(self.layers):
+            #print("layer {}".format(k), layer)
             layer.eval(x)
             x = layer.neurals
         return x
 
     def mean_squared_error(self, X, Y):
-        index = get_random_index(len(X), len(X))
-        samples = np.matrix([X[i] for i in index]).T
-        predictions = self.predict(samples)
-        observations = np.matrix([Y[i] for i in index]).T
+        #index = get_random_index(len(X), len(X))
+        #samples = np.matrix([X[i] for i in index]).T
+        #predictions = self.predict(samples)
+        predictions = self.predict(X)
+        #observations = np.matrix([Y[i] for i in index]).T
+        observations = Y
         errors = observations - predictions
+        print(errors)
+        print(errors.shape)
         return (1 / errors.shape[1]) * sum([e.dot(e.T) for e in errors.T])
 
     def binary_cross_entropy_error(self, X, Y):
@@ -103,7 +123,6 @@ class Mlp(object):
                 nb_errors += 1
         return 1 - nb_errors / len(X)
 
-
     def __init_layers(self, activation, hidden_layer_sizes):
         self.layers = [Layer(self.dim_input, 0, is_network_input=True)]
         for hidden_layer_size in hidden_layer_sizes:
@@ -119,3 +138,24 @@ class Mlp(object):
             is_network_output=True,
         )]
 
+    def __preprocess_data(self, X, Y):
+        mu = np.array([])
+        sigma = np.array([])
+        coefs = []
+        X = np.matrix(X)
+        for x in X:
+            mu = np.append(mu, np.mean(x))
+            sigma = np.append(sigma, np.std(x))
+        print("X.T.shape:", X.T.shape)
+        print("mu.shape:", mu.shape)
+        X_preprocessed = ((X.T - mu) / sigma).T
+        #X_preprocessed = ((X.T - 0) / 1).T
+        labels = list(set(Y))
+        print("labels:", labels)
+        Y_preprocessed = np.matrix(
+            [[1 if y == label else 0 for label in labels] for y in Y]
+        ).T
+        self.mu = mu
+        self.sigma = sigma
+        self.labels = labels
+        return X_preprocessed, Y_preprocessed

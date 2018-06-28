@@ -56,7 +56,7 @@ class Layer(object):
         ret += "input_size: {}\n".format(self.input_size)
         ret += "weights.shape: {}\n".format(self.weights.shape)
         ret += "weights: {}\n".format(self.weights)
-        ret += "bias: {}\n".format(self.bias)
+        ret += "biases: {}\n".format(self.biases)
         ret += "is_network_input: {}\n".format(self.is_network_input)
         ret += "is_network_output: {}\n".format(self.is_network_output)
         return ret

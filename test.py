@@ -32,18 +32,23 @@ def main():
     df.digitalize()
     df.replace_nan()
     df.standardize()
-    X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features])
-    X = X.T
-    Y = transform_label(df.data[output_label])
-    dim_input, dim_output = len(X[0]), len(Y[0])
+    #X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features])
+    X = [x for feature, x in df.data.items() if feature in df.numerical_features]
+    #Y = df.standardized[output_label]
+    Y = df.data[output_label]
+    dim_input, dim_output = len(X), len(list(set(Y)))
     mlp = Mlp(dim_input, dim_output)
     mlp.fit(X, Y)
-    X, Y = get_randomized_data(X, Y)
-    index = range(len(Y))
-    samples = [np.matrix(X[i]).T for i in index]
-    observations = [np.matrix([Y[i] for i in index]).T]
-    for n in range(len(Y)):
-        predict = mlp.predict(samples[n])
+    return
+    #X, Y = get_randomized_data(X, Y)
+    #index = range(len(Y))
+    #samples = [np.matrix(X[i]).T for i in index]
+    #observations = [np.matrix([Y[i] for i in index]).T]
+    #for n in range(len(Y)):
+    print(Y.shape)
+    for n in Y.shape[1]:
+        #predict = mlp.predict(samples[n])
+        predict = mlp.predict(X[n])
         #print("predict n : ", [round(p, 3) for p in predict], "    real:", Y[n])
         print("predict n : ", predict, "    real:", Y[n])
     #print("precision:", mlp.get_precision(samples, observations))
