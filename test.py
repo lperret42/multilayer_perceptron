@@ -39,6 +39,9 @@ def main():
     dim_input, dim_output = len(X), len(list(set(Y)))
     mlp = Mlp(dim_input, dim_output)
     mlp.fit(X, Y)
+    X = mlp.standardize(np.matrix(X))
+    predictions = mlp.predict_labels(X)
+    print("precision:", mlp.get_precision(predictions, Y))
     return
     #X, Y = get_randomized_data(X, Y)
     #index = range(len(Y))
