@@ -14,47 +14,42 @@ def parse_arguments():
     parser = argparse.ArgumentParser()
     parser.add_argument("-v", "--verbose", action="store_true",
         help="describe what append in algorithm")
-    parser.add_argument('csvfile', help='dataset_train.csv')
+    parser.add_argument('csvfile', help='data.csv')
     args = parser.parse_args()
 
     return args
 
-def transform_label(Y):
-    existings = list(set(Y))
-    print(existings)
-    return [np.array([1 if y == existing else 0 for existing in existings]) for y in Y]
-
 def main():
     output_label = 'diagnosis'     # diagnosis, iris, Hogwarts House
+    output_label = 'iris'
+    output_label = 'Hogwarts House'
+    output_label = 'age'
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features()
     df.digitalize()
     df.replace_nan()
     df.standardize()
-    #X = np.array([x for feature, x in df.standardized.items() if feature in df.numerical_features])
     X = [x for feature, x in df.data.items() if feature in df.numerical_features]
-    #Y = df.standardized[output_label]
     Y = df.data[output_label]
     dim_input, dim_output = len(X), len(list(set(Y)))
-    mlp = Mlp(dim_input, dim_output)
-    mlp.fit(X, Y)
-    X = mlp.standardize(np.matrix(X))
+    mlp = Mlp(dim_input, dim_output, hidden_layer_sizes=(128, 128, 128, 128, 128, 100))
+    print("before fit")
+    """
+    X_train, Y_train, X_test, Y_test = mlp.train_test_split(X,  Y)
+    print("X.shape", (len(X), len(X[0])))
+    print("Y.shape", len(Y))
+    print("X_train.shape", X_train.shape)
+    print("Y_train.shape", Y_train.shape)
+    mlp.fit(X_train, Y_train, verbose=True)
+    """
+    mlp.fit(X, Y, verbose=True)
     predictions = mlp.predict_labels(X)
+    [print("predict: {}   real: {}".format(
+        pred, obs)) for pred, obs in zip(predictions, Y)]
     print("precision:", mlp.get_precision(predictions, Y))
+    print("mean error:", mlp.get_mean_error(predictions, Y))
     return
-    #X, Y = get_randomized_data(X, Y)
-    #index = range(len(Y))
-    #samples = [np.matrix(X[i]).T for i in index]
-    #observations = [np.matrix([Y[i] for i in index]).T]
-    #for n in range(len(Y)):
-    print(Y.shape)
-    for n in Y.shape[1]:
-        #predict = mlp.predict(samples[n])
-        predict = mlp.predict(X[n])
-        #print("predict n : ", [round(p, 3) for p in predict], "    real:", Y[n])
-        print("predict n : ", predict, "    real:", Y[n])
-    #print("precision:", mlp.get_precision(samples, observations))
 
 if __name__ == '__main__':
     main()

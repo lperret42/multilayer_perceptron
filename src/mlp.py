@@ -6,15 +6,18 @@ from src.utils import get_random_index, get_randomized_data
 
 class Mlp(object):
     def __init__(self, dim_input, dim_output,
-                       hidden_layer_sizes=(16,), activation="tanh"):
+                       hidden_layer_sizes=None, activation="tanh"):
 
+        if hidden_layer_sizes is None:
+            hidden_layer_sizes = (int(dim_input / 2),)
         self.nb_hidden_layers = len(hidden_layer_sizes)
         self.nb_layers = self.nb_hidden_layers + 2
         self.dim_input = dim_input
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, Y, learning_rate=0.7, batch_size=100, epochs=5000, momentum=0.8):
+    def fit(self, X, Y, learning_rate=0.7, batch_size=8,
+                        epochs=50, momentum=0.9, verbose=False):
         X, Y = self.__preprocess_data(X, Y)
         nb_sample = X.shape[1]
         epoch = 0
@@ -24,37 +27,65 @@ class Mlp(object):
             observations = Y[:, index]
             predictions = self.__predict(sub_samples)
             errors = observations - predictions
-            self.get_local_grad(errors)
-            self.update_weights(learning_rate, batch_size, momentum)
-            if epoch != 0 and epoch % 100 == 0:
-                print("mean_squared_error at epoch {}: {}".format(epoch, self.mean_squared_error(X, Y)))
-                #print("binary_cross_entropy_error at epoch {}: {}".format(
-                #    epoch,
-                #    self.binary_cross_entropy_error(np.matrix(X).T, Y),
-                #))
+            self.__get_local_grad(errors)
+            self.__update_weights(learning_rate, batch_size, momentum)
+            if verbose and epoch != 0 and epoch % 100 == 0:
+                predictions = self.__predict(X)
+                squared_error = round(self.mean_squared_error(predictions, Y), 3)
+                entropy_error = round(self.cross_entropy_error(predictions, Y), 3)
+                print("mean squared error at epoch {}: {}".format(
+                                                epoch, squared_error))
+                print("entropy error at epoch {}: {}".format(epoch, entropy_error))
             epoch += 1
         return
-        exit()
-        print(self.predict(X))
-        print(self.predict_labels(X))
-        for n in range(Y.shape[1]):
-            predict = self.predict(X[:, n])
-            print("predict n : ",
-            [round(predict[0][0], 2), round(predict[1][0], 2)],
-            "    real:",
-            float(Y[:, n][0][0]), float(Y[:, n][1][0]),
-            )
 
+    def predict(self, X):
+        X = self.__standardize(np.matrix(X))
+        raw_predict = self.__predict(X).T
+        predict = [{self.labels[k]: raw_predict[n][k] for k in
+            range(raw_predict.shape[1])} for n in range(raw_predict.shape[0])]
+        return predict
 
-    def get_local_grad(self, errors):
+    def predict_labels(self, X):
+        predict = self.predict(X)
+        labels = [max(p.items(), key=operator.itemgetter(1))[0] for p in predict]
+        return labels
+
+    def get_precision(self, predictions, observations):
+        return sum([1 if pred == obs else 0 for pred, obs in
+            zip(predictions, observations)]) / len(predictions)
+
+    def get_mean_error(self, predictions, observations):
+        return np.mean([abs(pred - obs) for pred, obs in
+            zip(predictions, observations)])
+
+    def mean_squared_error(self, predictions, observations):
+        errors = observations - predictions
+        return float((1 / errors.shape[1]) * sum([e.dot(e.T) for e in errors.T]))
+
+    def cross_entropy_error(self, predictions, observations):
+        log_pred = np.vectorize(log)(predictions)
+        product = np.multiply(observations, log_pred)
+        return float(-sum(product.mean(axis=1)))
+
+    def print_layers(self):
+        for k, layer in enumerate(self.layers):
+            print("layer {}:\n".format(k), layer)
+
+    def __get_local_grad(self, errors):
         for n in reversed(range(1, self.nb_layers)):
             layer = self.layers[n]
-            deriv = layer.derivation(layer.aggregate(self.layers[n-1].neurals))
+            if layer.activation.name == "tanh":
+                deriv = 1 - layer.neurals ** 2
+            elif layer.activation.name in ("logistic", "softmax"):
+                deriv = layer.neurals * (1 - layer.neurals)
+            else:
+                deriv = layer.derivation(layer.aggregate(self.layers[n-1].neurals))
             if not layer.is_network_output:
                 errors = self.layers[n+1].weights.T * self.layers[n+1].local_grad
             layer.local_grad = np.multiply(errors, deriv)
 
-    def update_weights(self, learning_rate, batch_size, momentum):
+    def __update_weights(self, learning_rate, batch_size, momentum):
         for n in range(1, self.nb_layers):
             layer = self.layers[n]
             layer_1 = self.layers[n - 1]
@@ -75,42 +106,6 @@ class Mlp(object):
             X = layer.neurals
         return X
 
-    def mean_squared_error(self, X, Y):
-        predictions = self.__predict(X)
-        observations = Y
-        errors = observations - predictions
-        return (1 / errors.shape[1]) * sum([e.dot(e.T) for e in errors.T])
-
-    def binary_cross_entropy_error(self, X, Y):
-        if self.dim_output != 2:
-            raise Exception("Can't call binary_cross_entropy_error if dim_output != 2")
-        probas = self.predict(X)
-        errors = [y[1] * log(p[1]) + (1 - y[1]) * log(1 - p[1]) for p, y in zip(probas, Y)]
-        return (-1 / len(errors)) * sum(errors)
-
-    def predict(self, X):
-        raw_predict = self.__predict(X).T
-        predict = [{self.labels[k]: raw_predict[n][k] for k in
-            range(raw_predict.shape[1])} for n in range(raw_predict.shape[0])]
-        return predict
-
-    def predict_labels(self, X):
-        predict = self.predict(X)
-        labels = [max(p.items(), key=operator.itemgetter(1))[0] for p in predict]
-        return labels
-
-    def show_one_result(self, x, y):
-        prediction = self.predict(x)
-        print("prediction: {}    real: {}".format(prediction, y))
-
-    def print_layers(self):
-        for k, layer in enumerate(self.layers):
-            print("layer {}:\n".format(k), layer)
-
-    def get_precision(self, predictions, observations):
-        return sum([1 if pred == obs else 0 for pred, obs in
-            zip(predictions, observations)]) / len(predictions)
-
     def __init_layers(self, activation, hidden_layer_sizes):
         self.layers = [Layer(self.dim_input, 0, is_network_input=True)]
         for hidden_layer_size in hidden_layer_sizes:
@@ -126,7 +121,7 @@ class Mlp(object):
             is_network_output=True,
         )]
 
-    def standardize(self, X):
+    def __standardize(self, X):
         return ((X.T - self.mu) / self.sigma).T
 
     def __preprocess_data(self, X, Y):
@@ -134,12 +129,12 @@ class Mlp(object):
         sigma = np.array([])
         coefs = []
         X = np.matrix(X)
+        Y = np.array(Y)
         for x in X:
             mu = np.append(mu, np.mean(x))
             sigma = np.append(sigma, np.std(x))
         X_preprocessed = ((X.T - mu) / sigma).T
-        labels = list(set(Y))
-        print("labels:", labels)
+        labels = np.unique(Y)
         Y_preprocessed = np.matrix(
             [[1 if y == label else 0 for label in labels] for y in Y]
         ).T
@@ -147,3 +142,14 @@ class Mlp(object):
         self.sigma = sigma
         self.labels = labels
         return X_preprocessed, Y_preprocessed
+
+    def train_test_split(self, X, Y, train_ratio=0.8):
+        X = np.matrix(X)
+        Y = np.array(Y)
+        nb_samples = X.shape[1]
+        nb_for_train = int(train_ratio * nb_samples)
+        index_train = get_random_index(nb_samples, nb_for_train)
+        index_test = [i for i in range(nb_samples) if i not in index_train]
+        X_train, X_test = X[:, index_train], X[:, index_test]
+        Y_train, Y_test = Y[index_train], Y[index_test]
+        return X_train, Y_train, X_test, Y_test
