@@ -1,6 +1,18 @@
 import csv
 import numpy as np
 
+def train_test_split(X, Y, train_ratio=0.8):
+    X = np.matrix(X)
+    Y = np.matrix(Y)
+    nb_samples = X.shape[1]
+    nb_for_train = int(train_ratio * nb_samples)
+    index_train = get_random_index(nb_samples, nb_for_train)
+    index_test = [i for i in range(nb_samples) if i not in index_train]
+    X_train, X_test = X[:, index_train], X[:, index_test]
+    Y_train, Y_test = Y[:, index_train], Y[:, index_test]
+    return X_train, Y_train, X_test, Y_test
+
+
 def get_random_index(nb_elem, batch_size):
     index = list(range(nb_elem))
     np.random.shuffle(index)
@@ -39,25 +51,11 @@ def get_data(csv_file):
     return data
 
 def is_float(string):
-    if isinstance(string, float) or isinstance(string, int):
+    try:
+        float(string)
         return True
-    if len(string) == 0:
+    except ValueError:
         return False
-    if len(string) == 1:
-        if not string[0] in "0123456789":
-            return False
-        else:
-            return True
-    if len(string) == 2 and (string == "-." or string == ".-"):
-        return False
-    if string.count('.') > 1:
-        return False
-    if '-' in string[1:]:
-        return False
-    for c in string:
-        if not (c == '-' or c == '.' or c in "0123456789"):
-            return False
-    return True
 
 def is_list_num(lst):
     for elem in lst:

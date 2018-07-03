@@ -2,7 +2,7 @@ import operator
 import numpy as np
 from math import log
 from src.layer import Layer
-from src.utils import get_random_index, get_randomized_data
+from src.utils import train_test_split
 
 class Mlp(object):
     def __init__(self, dim_input, dim_output,
@@ -16,13 +16,21 @@ class Mlp(object):
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, Y, learning_rate=0.7, batch_size=8,
-                        epochs=50, momentum=0.9, verbose=False):
+    def fit(self, X, Y, learning_rate=0.3, batch_size=32,
+                        epochs=400, momentum=0.9, verbose=False):
         X, Y = self.__preprocess_data(X, Y)
+        #X_train, Y_train, X_test, Y_test = train_test_split(X, Y, train_ratio=0.9)
+        #nb_sample = X_train.shape[1]
         nb_sample = X.shape[1]
+        print("nb_sample:", nb_sample)
+        batch_size = min(batch_size, nb_sample)
         epoch = 0
-        while epoch < epochs:
-            index = get_random_index(nb_sample, batch_size)
+        while epoch <= epochs:
+            #print("epoch:", epoch)
+            index = np.random.choice(nb_sample, batch_size, replace=False)
+            #print("index:", index)
+            #sub_samples = X_train[:, index]
+            #observations = Y_train[:, index]
             sub_samples = X[:, index]
             observations = Y[:, index]
             predictions = self.__predict(sub_samples)
@@ -30,7 +38,10 @@ class Mlp(object):
             self.__get_local_grad(errors)
             self.__update_weights(learning_rate, batch_size, momentum)
             if verbose and epoch != 0 and epoch % 100 == 0:
+                #predictions = self.__predict(X_test)
                 predictions = self.__predict(X)
+                #squared_error = round(self.mean_squared_error(predictions, Y_test), 3)
+                #entropy_error = round(self.cross_entropy_error(predictions, Y_test), 3)
                 squared_error = round(self.mean_squared_error(predictions, Y), 3)
                 entropy_error = round(self.cross_entropy_error(predictions, Y), 3)
                 print("mean squared error at epoch {}: {}".format(
@@ -136,20 +147,9 @@ class Mlp(object):
         X_preprocessed = ((X.T - mu) / sigma).T
         labels = np.unique(Y)
         Y_preprocessed = np.matrix(
-            [[1 if y == label else 0 for label in labels] for y in Y]
+            [[1 if y == label else 0 for label in labels] for y in Y.T]
         ).T
         self.mu = mu
         self.sigma = sigma
         self.labels = labels
         return X_preprocessed, Y_preprocessed
-
-    def train_test_split(self, X, Y, train_ratio=0.8):
-        X = np.matrix(X)
-        Y = np.array(Y)
-        nb_samples = X.shape[1]
-        nb_for_train = int(train_ratio * nb_samples)
-        index_train = get_random_index(nb_samples, nb_for_train)
-        index_test = [i for i in range(nb_samples) if i not in index_train]
-        X_train, X_test = X[:, index_train], X[:, index_test]
-        Y_train, Y_test = Y[index_train], Y[index_test]
-        return X_train, Y_train, X_test, Y_test

@@ -39,7 +39,7 @@ class Layer(object):
         else:
             self.activation = ACTIVATIONS[activation_name]
 
-    def __init_weights_biases_deltas(self, coef=1):
+    def __init_weights_biases_deltas(self, coef=0.5):
         if not self.is_network_input:
             self.weights = (np.random.rand(self.size, self.input_size) *
                             coef) - coef / 2
