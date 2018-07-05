@@ -12,6 +12,8 @@ def train_test_split(X, Y, train_ratio=0.8):
     Y_train, Y_test = Y[:, index_train], Y[:, index_test]
     return X_train, Y_train, X_test, Y_test
 
+def multi_to_one(Y):
+    return [np.where(np.squeeze(np.asarray(y)==1))[0][0] for y in Y.T]
 
 def get_random_index(nb_elem, batch_size):
     index = list(range(nb_elem))

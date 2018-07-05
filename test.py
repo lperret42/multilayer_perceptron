@@ -9,7 +9,8 @@ from src.activations import Relu
 from src.layer import Layer
 from src.mlp import Mlp
 from sklearn.neural_network import MLPClassifier
-from src.utils import get_randomized_data, train_test_split
+from src.utils import get_randomized_data, train_test_split,\
+                      multi_to_one
 
 def parse_arguments():
     parser = argparse.ArgumentParser()
@@ -23,8 +24,8 @@ def parse_arguments():
 def main():
     output_label = 'Hogwarts House'
     output_label = 'iris'
-    output_label = 'age'
     output_label = 'diagnosis'     # diagnosis, iris, Hogwarts House
+    output_label = 'age'
     args = parse_arguments()
     df = dataframe.read_csv(args.csvfile)
     df.get_numerical_features(remove=["age"])
@@ -33,7 +34,7 @@ def main():
     df.standardize()
     X = [x for feature, x in df.data.items() if feature in df.numerical_features]
     Y = df.data[output_label]
-    X_train, Y_train, X_test, Y_test = train_test_split(X, Y)
+    X_train, Y_train, X_test, Y_test = train_test_split(X, Y, train_ratio=0.9)
     """
     tmp = Mlp(5, 5)
     clf = MLPClassifier()
@@ -56,13 +57,22 @@ def main():
     #dim_input, dim_output = len(X), len(list(set((Y))))
     #mlp = Mlp(dim_input, dim_output, hidden_layer_sizes=(128, 128, 128, 128, 128, 100))
     #mlp = Mlp(dim_input, dim_output, hidden_layer_sizes=(128,128,128,100,))
-    mlp = Mlp(dim_input, dim_output, hidden_layer_sizes=(8,))
+    mlp = Mlp(dim_input, dim_output, hidden_layer_sizes=(10,))
+    #mlp = Mlp(dim_input, dim_output)
     #mlp.fit(X_train, Y_train, verbose=True)
     #mlp.fit(X, Y, verbose=True)
+    """
+    for_test = [y[0] for y in Y_test.T.tolist()]
+    mlp.print_pred_vs_obs(for_test, multi_to_one(np.matrix(
+        [[1 if y == label else 0 for label in np.unique(Y_test)] for y in np.array(Y_test).T]
+        ).T))
+    exit()
+    """
     mlp.fit(X_train, Y_train, verbose=True)
     predictions = mlp.predict_labels(X_test)
-    [print("predict: {}   real: {}".format(
-        pred, obs[0,0])) for pred, obs in zip(predictions, Y_test.T)]
+    mlp.print_pred_vs_obs(predictions, Y_test)
+    #[print("predict: {}   real: {}".format(
+    #    pred, obs[0,0])) for pred, obs in zip(predictions, Y_test.T)]
     print("precision:", mlp.get_precision(predictions, Y_test.T))
     print("mean error:", mlp.get_mean_error(predictions, Y_test.T))
     return

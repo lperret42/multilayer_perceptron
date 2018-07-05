@@ -2,7 +2,7 @@ import operator
 import numpy as np
 from math import log
 from src.layer import Layer
-from src.utils import train_test_split
+from src.utils import train_test_split, multi_to_one
 
 class Mlp(object):
     def __init__(self, dim_input, dim_output,
@@ -16,12 +16,14 @@ class Mlp(object):
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, Y, learning_rate=0.3, batch_size=32,
-                        epochs=400, momentum=0.9, verbose=False):
-        X, Y = self.__preprocess_data(X, Y)
-        #X_train, Y_train, X_test, Y_test = train_test_split(X, Y, train_ratio=0.9)
-        #nb_sample = X_train.shape[1]
-        nb_sample = X.shape[1]
+    def fit(self, X, Y, learning_rate=0.5, batch_size=8,
+                        epochs=600, momentum=0.9, verbose=False):
+        X_train, Y_train = self.__preprocess_data(X, Y)
+        #X_train, Y_train, X_test, Y_test = train_test_split(
+        #                            X_train, Y_train, train_ratio=0.9)
+        X_test, Y_test = X_train, Y_train
+        nb_sample = X_train.shape[1]
+        #nb_sample = X.shape[1]
         print("nb_sample:", nb_sample)
         batch_size = min(batch_size, nb_sample)
         epoch = 0
@@ -29,44 +31,60 @@ class Mlp(object):
             #print("epoch:", epoch)
             index = np.random.choice(nb_sample, batch_size, replace=False)
             #print("index:", index)
-            #sub_samples = X_train[:, index]
-            #observations = Y_train[:, index]
-            sub_samples = X[:, index]
-            observations = Y[:, index]
+            sub_samples = X_train[:, index]
+            observations = Y_train[:, index]
+            #sub_samples = X[:, index]
+            #observations = Y[:, index]
+            #print("sub_samples:", sub_samples)
+            #print("sub_samples.shape:", sub_samples.shape)
             predictions = self.__predict(sub_samples)
             errors = observations - predictions
             self.__get_local_grad(errors)
             self.__update_weights(learning_rate, batch_size, momentum)
             if verbose and epoch != 0 and epoch % 100 == 0:
-                #predictions = self.__predict(X_test)
-                predictions = self.__predict(X)
-                #squared_error = round(self.mean_squared_error(predictions, Y_test), 3)
-                #entropy_error = round(self.cross_entropy_error(predictions, Y_test), 3)
-                squared_error = round(self.mean_squared_error(predictions, Y), 3)
-                entropy_error = round(self.cross_entropy_error(predictions, Y), 3)
-                print("mean squared error at epoch {}: {}".format(
-                                                epoch, squared_error))
-                print("entropy error at epoch {}: {}".format(epoch, entropy_error))
+                pred = self.__predict(X_test)
+                pred_labels = self.predict_labels(X_test, need_standardize=False)
+                #sqr_error = round(self.mean_squared_error(pred, Y_test), 3)
+                entr_error = round(self.cross_entropy_error(pred, Y_test), 3)
+                mean_error = round(self.get_mean_error(pred_labels,
+                                    multi_to_one(Y_test)), 3)
+                print("entr error at epoch {}: {}".format(epoch, entr_error))
+                print("mean error at epoch {}: {}".format(epoch, mean_error))
+                """
+                print("pred_labels:", pred_labels)
+                print("Y_test:", Y_test)
+                print("Y_test.T:", Y_test.T)
+                print("len(pred_labels):", len(pred_label#s))
+                print("Y.shape:", Y_test.shape)
+                print("Y_test.T.shape:", Y_test.T.shape)
+                """
             epoch += 1
         return
 
-    def predict(self, X):
-        X = self.__standardize(np.matrix(X))
+    def predict(self, X, need_standardize=True):
+        if need_standardize:
+            X = self.__standardize(np.matrix(X))
         raw_predict = self.__predict(X).T
         predict = [{self.labels[k]: raw_predict[n][k] for k in
             range(raw_predict.shape[1])} for n in range(raw_predict.shape[0])]
         return predict
 
-    def predict_labels(self, X):
-        predict = self.predict(X)
+    def predict_labels(self, X, need_standardize=True):
+        predict = self.predict(X, need_standardize=need_standardize)
         labels = [max(p.items(), key=operator.itemgetter(1))[0] for p in predict]
         return labels
+
+    def print_pred_vs_obs(self, predictions, observations):
+        [print("predict: {}   real: {}".format(
+            pred, obs)) for pred, obs in zip(predictions, observations)]
 
     def get_precision(self, predictions, observations):
         return sum([1 if pred == obs else 0 for pred, obs in
             zip(predictions, observations)]) / len(predictions)
 
     def get_mean_error(self, predictions, observations):
+        #[print("pred:,", pred, "obs:", obs, "abs(pred - obs):",abs(pred - obs)) for pred, obs in
+        #    zip(predictions, observations)]
         return np.mean([abs(pred - obs) for pred, obs in
             zip(predictions, observations)])
 
