@@ -1,5 +1,5 @@
 import numpy as np
-from src.math import relu_vec, d_relu_vec, logistic_vec,\
+from .math import relu_vec, d_relu_vec, logistic_vec,\
     d_logistic_vec, tanh_vec, d_tanh_vec, softmax, d_softmax
 
 class Activation(object):

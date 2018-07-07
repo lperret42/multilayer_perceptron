@@ -1,6 +1,6 @@
 import numpy as np
 import random
-from src.utils import get_data, keep_only_float, quicksort, is_float, is_list_num,\
+from .utils import get_data, keep_only_float, quicksort, is_float, is_list_num,\
                       sum_with_empty, mean_with_empty
 
 def read_csv(csvfile):

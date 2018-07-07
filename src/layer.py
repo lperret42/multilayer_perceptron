@@ -1,5 +1,5 @@
 import numpy as np
-from src.activations import ACTIVATIONS
+from .activations import ACTIVATIONS
 
 class Layer(object):
     def __init__(self, size, input_size,
@@ -39,14 +39,14 @@ class Layer(object):
         else:
             self.activation = ACTIVATIONS[activation_name]
 
-    def __init_weights_biases_deltas(self, coef=1):
+    #def __init_weights_biases_deltas(self, coef_w=0.1, coef_b=0.1):
+    def __init_weights_biases_deltas(self, coef_w=0.4, coef_b=0.4):
         if not self.is_network_input:
             self.weights = (np.random.rand(self.size, self.input_size) *
-                            coef) - coef / 2
+                            coef_w) - coef_w / 2
             self.biases = np.matrix(
-                (coef * (np.random.rand(self.size)) - coef / 2)
+                (coef_b * (np.random.rand(self.size)) - coef_b / 2)
                 ).T
-            #self.biases = np.matrix(np.ones(self.size)).T
             self.d_weights = np.zeros((self.size, self.input_size))
             self.d_biases = np.zeros((self.size, 1))
 

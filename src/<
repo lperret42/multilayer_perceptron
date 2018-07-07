@@ -7,7 +7,7 @@ from .utils import train_test_split, multi_to_one, is_float
 
 class Mlp(object):
     def __init__(self, dim_input, dim_output,
-                       hidden_layer_sizes=None, activation="relu"):
+                       hidden_layer_sizes=None, activation="tanh"):
 
         if hidden_layer_sizes is None:
             hidden_layer_sizes = (int(dim_input / 2),)
@@ -17,20 +17,23 @@ class Mlp(object):
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, Y, learning_rate=0.01, batch_size=200,
-                        epochs=1000, momentum=0.9, verbose=False):
+    def fit(self, X, Y, learning_rate=1.5, batch_size=400,
+                        epochs=1000, momentum=0.95, verbose=False):
+        #X_train, Y_train = self.__preprocess_data(X, Y)
         X, Y = self.__preprocess_data(X, Y)
         X_train, Y_train, X_test, Y_test = train_test_split(
-                                    X, Y, train_ratio=0.9)
+                                    X, Y, train_ratio=0.8)
+        #X_test, Y_test = X_train, Y_train
         nb_sample = X_train.shape[1]
+        #nb_sample = X.shape[1]
         print("nb_sample:", nb_sample)
-        print("dim_input:", self.dim_input)
-        print("dim_output:", self.dim_output)
         batch_size = min(batch_size, nb_sample)
         epoch = 0
         try:
             while epoch <= epochs:
                 index = np.random.choice(nb_sample, batch_size, replace=False)
+                #index = epoch % nb_sample
+                #print("index:", index)
                 sub_samples = X_train[:, index]
                 observations = Y_train[:, index]
                 predictions = self.__predict(sub_samples)
@@ -41,13 +44,10 @@ class Mlp(object):
                 if True:
                     pred = self.__predict(X_test)
                     pred_labels = self.predict_labels(X_test, need_standardize=False)
-                    squared_error = round(self.mean_squared_error(pred, Y_test), 3)
-                    entr_error = round(self.cross_entropy_error(pred, Y_test), 5)
+                    entr_error = round(self.cross_entropy_error(pred, Y_test), 3)
                     mean_error = self.get_mean_error(pred_labels, multi_to_one(Y_test))
                     print("entr error at epoch {}: {}".format(epoch, entr_error))
-                    print("squared error at epoch {}: {}".format(epoch, squared_error))
                     print("mean error at epoch {}: {}".format(epoch, mean_error))
-                    print("***********************************************")
                 epoch += 1
         except KeyboardInterrupt:
                     warnings.warn("Training interrupted by user.")
@@ -86,10 +86,8 @@ class Mlp(object):
 
     def cross_entropy_error(self, predictions, observations):
         log_pred = np.vectorize(log)(predictions)
-        log_pred_comp = np.vectorize(log)(1-predictions)
-        product = np.multiply(observations, log_pred) +\
-            np.multiply(1 - observations, log_pred_comp)
-        return (-product.mean(axis=0)).mean()
+        product = np.multiply(observations, log_pred)
+        return float(-sum(product.mean(axis=1)))
 
     def print_layers(self):
         for k, layer in enumerate(self.layers):
@@ -98,19 +96,18 @@ class Mlp(object):
     def __get_local_grad(self, errors):
         for n in reversed(range(1, self.nb_layers)):
             layer = self.layers[n]
+            #"""
+            if layer.activation.name == "tanh":
+                deriv = 1 - layer.neurals ** 2
+            elif layer.activation.name in ("logistic", "softmax"):
+                deriv = layer.neurals * (1 - layer.neurals)
+            else:
+                deriv = layer.derivation(layer.aggregate(self.layers[n-1].neurals))
+            #"""
+            #deriv = layer.derivation(layer.aggregate(self.layers[n-1].neurals))
             if not layer.is_network_output:
                 errors = self.layers[n+1].weights.T * self.layers[n+1].local_grad
-            if layer.is_network_output:
-            #if True:
-                layer.local_grad = errors
-            else:
-                if layer.activation.name == "tanh":
-                    deriv = 1 - layer.neurals ** 2
-                elif layer.activation.name in ("logistic", "softmax"):
-                    deriv = layer.neurals * (1 - layer.neurals)
-                else:
-                    deriv = layer.derivation(layer.aggregate(self.layers[n-1].neurals))
-                layer.local_grad = np.multiply(errors, deriv)
+            layer.local_grad = np.multiply(errors, deriv)
 
     def __update_weights(self, learning_rate, batch_size, momentum):
         for n in range(1, self.nb_layers):
@@ -123,8 +120,10 @@ class Mlp(object):
             mean_local_grad = layer.local_grad.mean(axis=1)
             layer.d_biases = learning_rate * mean_local_grad +\
                             momentum * layer.d_biases
+
             layer.weights += layer.d_weights
             layer.biases += layer.d_biases
+            #layer.biases -= layer.d_biases
 
     def __predict(self, X):
         for k, layer in enumerate(self.layers):
