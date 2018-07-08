@@ -1,32 +1,46 @@
 import csv
+from math import log
 import numpy as np
 
-def train_test_split(X, Y, train_ratio=0.8):
+def train_test_split(X, y, train_ratio=0.8):
     X = np.matrix(X)
-    Y = np.matrix(Y)
+    y = np.matrix(y)
     nb_samples = X.shape[1]
     nb_for_train = int(train_ratio * nb_samples)
-    index_train = get_random_index(nb_samples, nb_for_train)
+    index_train = np.random.choice(nb_samples, nb_for_train, replace=False)
     index_test = [i for i in range(nb_samples) if i not in index_train]
     X_train, X_test = X[:, index_train], X[:, index_test]
-    Y_train, Y_test = Y[:, index_train], Y[:, index_test]
-    return X_train, Y_train, X_test, Y_test
+    y_train, y_test = y[:, index_train], y[:, index_test]
+    return X_train, y_train, X_test, y_test
+
+def print_pred_vs_obs(predictions, observations):
+    [print("predict: {}   real: {}".format(
+        pred, obs)) for pred, obs in zip(predictions, observations)]
+
+def prediction_precision(predictions, observations):
+    return sum([1 if pred == obs else 0 for pred, obs in
+        zip(predictions, observations)]) / len(predictions)
+
+def prediction_mean_error(predictions, observations):
+    if len(predictions) == 0 or not is_float(predictions[0]):
+        return None
+    return round(np.mean([abs(pred - obs) for pred, obs in
+        zip(predictions, observations)]), 3)
+
+def mean_squared_error(predictions, observations):
+    errors = observations - predictions
+    return float((1 / errors.shape[1]) * sum([e.dot(e.T) for e in errors.T]))
+
+def cross_entropy_error(predictions, observations, margin=1e-10):
+    np.clip(predictions, margin, 1 - margin, out=predictions)
+    log_pred = np.vectorize(log)(predictions)
+    log_pred_comp = np.vectorize(log)(1-predictions)
+    product = np.multiply(observations, log_pred) +\
+        np.multiply(1 - observations, log_pred_comp)
+    return (-product.mean(axis=0)).mean()
 
 def multi_to_one(Y):
     return [np.where(np.squeeze(np.asarray(y)==1))[0][0] for y in Y.T]
-
-def get_random_index(nb_elem, batch_size):
-    index = list(range(nb_elem))
-    np.random.shuffle(index)
-    return index[:batch_size]
-
-def get_randomized_data(X, Y):
-    if len(X) != len(Y):
-        raise Exception("nb input and nb output are not equals !")
-    index = get_random_index(len(X), len(Y))
-    X_randomized = [X[i] for i in index]
-    Y_randomized = [Y[i] for i in index]
-    return X_randomized, Y_randomized
 
 def sum_with_empty(lst):
     s = 0

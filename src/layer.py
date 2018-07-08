@@ -5,6 +5,7 @@ class Layer(object):
     def __init__(self, size, input_size,
             activation="relu", is_network_input=False,  is_network_output=False):
 
+        self.activation_name = activation
         self.size = size
         self.neurals = np.array([])
         self.input_size = input_size
@@ -12,7 +13,6 @@ class Layer(object):
         self.is_network_output = is_network_output
         self.weights = np.array([])
         self.biases = np.array([])
-        self.weights = np.array([])
         self.local_grad = np.array([])
 
         self.__init_activation(activation)
@@ -52,7 +52,7 @@ class Layer(object):
 
     def __str__(self):
         ret = ""
-        ret += "activation: {}\n".format(self.activation)
+        ret += "activation: {}\n".format(self.activation_name)
         ret += "size: {}\n".format(self.size)
         ret += "input_size: {}\n".format(self.input_size)
         ret += "weights.shape: {}\n".format(self.weights.shape)

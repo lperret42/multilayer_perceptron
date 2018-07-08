@@ -9,7 +9,8 @@ from src.activations import Relu
 from src.layer import Layer
 from src.mlp import Mlp
 from sklearn.neural_network import MLPClassifier
-from src.utils import get_randomized_data, train_test_split,\
+from src.utils import train_test_split, prediction_precision,\
+                      prediction_mean_error, mean_squared_error,\
                       multi_to_one
 
 def parse_arguments():
@@ -51,9 +52,9 @@ def main():
     Y_test = [y[0] for y in Y_test]
     [print("predict: {}   real: {}".format(
         pred, float(obs))) for pred, obs in zip(predictions, Y_test)]
-    print("precision:", tmp.get_precision(predictions, Y_test))
-    print("mean error:", tmp.get_mean_error(predictions, Y_test))
-    print("squared error:", tmp.mean_squared_error(predictions, Y_test))
+    print("precision:", prediction_precision(predictions, Y_test))
+    print("mean error:", prediction_mean_error(predictions, Y_test))
+    print("squared error:", mean_squared_error(predictions, Y_test))
     return
 
 if __name__ == '__main__':
