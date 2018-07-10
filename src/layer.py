@@ -1,9 +1,12 @@
 import numpy as np
 from .activations import ACTIVATIONS
+from .utils import get_uniform_matrix, get_normal_matrix
 
 class Layer(object):
-    def __init__(self, size, input_size,
-            activation="relu", is_network_input=False,  is_network_output=False):
+    def __init__(self, size, input_size, activation="relu",
+                 weights_init=("uniform", -0.01, 0.01),
+                 biases_init=("uniform", -0.1, 0.1),
+                 is_network_input=False,  is_network_output=False):
 
         self.activation_name = activation
         self.size = size
@@ -13,10 +16,12 @@ class Layer(object):
         self.is_network_output = is_network_output
         self.weights = np.array([])
         self.biases = np.array([])
+        self.d_weights = np.array([])
+        self.d_biases = np.array([])
         self.local_grad = np.array([])
 
         self.__init_activation(activation)
-        self.__init_weights_biases_deltas()
+        self.__init_weights_biases_deltas(weights_init, biases_init)
 
     def aggregate(self, X):
         return self.weights.dot(X) + self.biases
@@ -39,14 +44,24 @@ class Layer(object):
         else:
             self.activation = ACTIVATIONS[activation_name]
 
-    #def __init_weights_biases_deltas(self, coef_w=0.1, coef_b=0.1):
-    def __init_weights_biases_deltas(self, coef_w=0.4, coef_b=0.4):
+    def __init_weights_biases_deltas(self, weights_init, biases_init):
         if not self.is_network_input:
-            self.weights = (np.random.rand(self.size, self.input_size) *
-                            coef_w) - coef_w / 2
-            self.biases = np.matrix(
-                (coef_b * (np.random.rand(self.size)) - coef_b / 2)
-                ).T
+            w_init_str, w_param1, w_param2 = weights_init
+            b_init_str, b_param1, b_param2 = biases_init
+            if w_init_str == "normal":
+                self.weights = get_normal_matrix((self.size, self.input_size),
+                                                 w_param1, w_param2)
+            elif w_init_str == "uniform":
+                self.weights = get_uniform_matrix((self.size, self.input_size),
+                                                 w_param1, w_param2)
+            else:
+                raise Exception("{} weights init is not supported".format(w_init_str))
+            if b_init_str == "normal":
+                self.biases = get_normal_matrix(self.size, b_param1, b_param2)
+            elif b_init_str == "uniform":
+                self.biases = get_uniform_matrix(self.size, b_param1, b_param2)
+            else:
+                raise Exception("{} biases init is not supported".format(w_init_str))
             self.d_weights = np.zeros((self.size, self.input_size))
             self.d_biases = np.zeros((self.size, 1))
 

@@ -8,10 +8,38 @@ def train_test_split(X, y, train_ratio=0.8):
     nb_samples = X.shape[1]
     nb_for_train = int(train_ratio * nb_samples)
     index_train = np.random.choice(nb_samples, nb_for_train, replace=False)
-    index_test = [i for i in range(nb_samples) if i not in index_train]
+    index_test = list(set(range(nb_samples)) -set(index_train))
     X_train, X_test = X[:, index_train], X[:, index_test]
     y_train, y_test = y[:, index_train], y[:, index_test]
     return X_train, y_train, X_test, y_test
+
+def get_uniform_matrix(sizes, low=0, high=1):
+    if isinstance(sizes, int) or isinstance(sizes, float):
+        dim_one = True
+        sizes = (sizes, 1)
+    elif len(sizes) == 1:
+        sizes = (sizes[0], 1)
+        dim_one = True
+    else:
+        dim_one = False
+    weights = np.random.uniform(low, high, sizes)
+    if dim_one:
+        weights = np.matrix(weights)
+    return weights
+
+def get_normal_matrix(sizes, mu=0, sigma=1):
+    if isinstance(sizes, int) or isinstance(sizes, float):
+        dim_one = True
+        sizes = (sizes, 1)
+    elif len(sizes) == 1:
+        dim_one = True
+        sizes = (sizes[0], 1)
+    else:
+        dim_one = False
+    weights = np.random.uniform(mu, sigma, sizes)
+    if dim_one:
+        weights = np.matrix(weights)
+    return weights
 
 def print_pred_vs_obs(predictions, observations):
     [print("predict: {}   real: {}".format(
@@ -31,16 +59,12 @@ def mean_squared_error(predictions, observations):
     errors = observations - predictions
     return float((1 / errors.shape[1]) * sum([e.dot(e.T) for e in errors.T]))
 
-def cross_entropy_error(predictions, observations, margin=1e-10):
+def cross_entropy_loss(predictions, observations, margin=1e-20):
     np.clip(predictions, margin, 1 - margin, out=predictions)
     log_pred = np.vectorize(log)(predictions)
     log_pred_comp = np.vectorize(log)(1-predictions)
-    product = np.multiply(observations, log_pred) +\
-        np.multiply(1 - observations, log_pred_comp)
-    return (-product.mean(axis=0)).mean()
-
-def multi_to_one(Y):
-    return [np.where(np.squeeze(np.asarray(y)==1))[0][0] for y in Y.T]
+    product = np.multiply(observations, log_pred)
+    return (-product.sum(axis=0)).mean()
 
 def sum_with_empty(lst):
     s = 0

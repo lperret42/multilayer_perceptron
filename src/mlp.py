@@ -1,43 +1,39 @@
-import operator
-import warnings
+import os, operator, warnings, pickle, datetime
+from pkg_resources import resource_filename
 import numpy as np
 from .layer import Layer
-from .utils import train_test_split, prediction_precision, prediction_mean_error,\
-                   mean_squared_error, cross_entropy_error,\
-                   multi_to_one, is_float
+from .utils import train_test_split, cross_entropy_loss
 
 class Mlp(object):
-    def __init__(self, dim_input, dim_output,
-                       hidden_layer_sizes=None, activation="tanh"):
-
+    def __init__(self, dim_input, dim_output, hidden_layer_sizes=None,
+                 activation="tanh"):
         if hidden_layer_sizes is None:
-            hidden_layer_sizes = (int(dim_input / 2), int(dim_input / 2), )
-        self.nb_hidden_layers = len(hidden_layer_sizes)
-        self.nb_layers = self.nb_hidden_layers + 2
+            hidden_layer_sizes = (int(dim_input), )
+        self.nb_layers = len(hidden_layer_sizes) + 2
         self.dim_input = dim_input
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, y, learning_rate=0.1, batch_size=200,
-            max_epochs=500, momentum=0.9, epsilon=1e-2,
-            early_stopping=False, e_s=20, val_ratio=0.1, verbose=False):
+    def fit(self, X, y, learning_rate=0.1, batch_size=512, max_epochs=256,
+            momentum=0.9, early_stopping=25, val_ratio=0.2, verbose=False):
         X, y = self.__preprocess_data(X, y)
         X_train, y_train, X_val, y_val = train_test_split(
-                                    X, y, train_ratio=1 - val_ratio)
+                                    X, y, train_ratio= 1 - val_ratio)
         nb_samples = X_train.shape[1]
         if verbose:
-            print("nb samples:", nb_samples)
+            print("nb samples for training:", nb_samples)
+            print("nb samples for validation:", X_val.shape[1])
             print("dim input:", self.dim_input)
             print("dim output:", self.dim_output)
         batch_size = min(batch_size, nb_samples)
         try:
             self.__training_loop(X_train, y_train, X_val, y_val, learning_rate,
-                max_epochs, momentum, nb_samples, batch_size, epsilon,
-                early_stopping, e_s, verbose)
+                max_epochs, momentum, nb_samples, batch_size,
+                early_stopping, verbose)
         except KeyboardInterrupt:
-                    warnings.warn("Training interrupted by user.")
+            warnings.warn("Training has been interrupted")
 
-    def predict(self, X, need_standardize=True):
+    def predict_probas(self, X, need_standardize=True):
         if need_standardize:
             X = self.__standardize(np.matrix(X))
         raw_predict = self.__predict(X).T
@@ -45,8 +41,8 @@ class Mlp(object):
             range(raw_predict.shape[1])} for n in range(raw_predict.shape[0])]
         return predict
 
-    def predict_probas(self, X, need_standardize=True):
-        predict = self.predict(X, need_standardize=need_standardize)
+    def predict(self, X, need_standardize=True):
+        predict = self.predict_probas(X, need_standardize=need_standardize)
         labels = [max(p.items(), key=operator.itemgetter(1))[0] for p in predict]
         return labels
 
@@ -54,65 +50,78 @@ class Mlp(object):
         for k, layer in enumerate(self.layers):
             print("layer {}:\n".format(k), layer, sep='')
 
+    def dump(self, model_name=None, directory=None):
+        if model_name is None:
+            model_name = str(datetime.datetime.now()).split('.')[0]  + ".pkl"
+        if directory is None:
+            directory = resource_filename(__name__, '../models')
+            if not os.path.exists(directory):
+                os.mkdir(directory)
+        filename = os.path.realpath(os.path.join(directory, model_name))
+        with open(filename, 'wb') as fd:
+            pickle.dump(self, fd)
+            print("model saved in {}".format(filename))
+
+    @classmethod
+    def load(cls, model):
+        with open(model, 'rb') as fd:
+            ret = pickle.load(fd)
+        return ret
+
     def __training_loop(self, X_train, y_train, X_val, y_val, learning_rate,
-                        max_epochs, momentum, nb_samples, batch_size, epsilon,
-                        early_stopping, e_s, verbose, lr_decrease=1):
+                        max_epochs, momentum, nb_samples, batch_size,
+                        early_stopping, verbose):
         last_loss, best_loss = float("inf"), float("inf")
-        weights_biases = [{"w": l.weights, "b": l.biases} for l in self.layers]
+        weights_biases = [(l.weights.copy(), l.biases.copy()) for
+                          l in self.layers]
         last_improvement = 0
         epoch = 0
-        try:
-            while epoch <= max_epochs:
-                index = np.random.choice(nb_samples, batch_size, replace=False)
-                sub_samples = X_train[:, index]
-                observations = y_train[:, index]
-                predictions = self.__predict(sub_samples)
-                errors = observations - predictions
-                self.__backprop(errors)
-                self.__weights_update(learning_rate, batch_size, momentum)
-                val_pred = self.__predict(X_val)
-                loss = cross_entropy_error(val_pred, y_val)
-                if verbose:
-                    print("loss at epoch {}: {}".format(epoch, round(loss, 5)))
-                if loss > last_loss:
-                    learning_rate *= lr_decrease
-                if early_stopping:
-                    if loss > best_loss:
-                        last_improvement += 1
-                    else:
-                        weights_biases = [
-                            {"w": l.weights.copy(), "b": l.biases.copy()} for
-                        l in self.layers]
-                        last_improvement = 0
-                        best_loss = loss
-                    if last_improvement >= e_s:
-                        if verbose:
-                            print("Early stopping")
-                        val_pred = self.__predict(X_val)
-                        loss = cross_entropy_error(val_pred, y_val)
-                        self.force_weights_biases(weights_biases)
-                        val_pred = self.__predict(X_val)
-                        loss = cross_entropy_error(val_pred, y_val)
-                        break
-                last_loss = loss
-                epoch += 1
-        except KeyboardInterrupt:
-                    warnings.warn("Training has been interrupted")
+        while epoch <= max_epochs:
+            index = np.random.choice(nb_samples, batch_size, replace=False)
+            sub_samples = X_train[:, index]
+            observations = y_train[:, index]
+            predictions = self.__predict(sub_samples)
+            errors = observations - predictions
+            self.__backprop(errors)
+            self.__weights_update(learning_rate, batch_size, momentum)
+            val_pred = self.__predict(X_val)
+            loss = cross_entropy_loss(val_pred, y_val)
+            if verbose:
+                print("cross entropy loss at epoch {}: {}".format(epoch,
+                                                        round(loss, 5)))
+            if early_stopping != -1:
+                if loss > best_loss:
+                    last_improvement += 1
+                else:
+                    weights_biases = [(l.weights.copy(), l.biases.copy()) for
+                                      l in self.layers]
+                    last_improvement = 0
+                    best_loss = loss
+                if last_improvement >= early_stopping:
+                    if verbose:
+                        print("Early stopping")
+                    val_pred = self.__predict(X_val)
+                    loss = cross_entropy_loss(val_pred, y_val)
+                    self.__force_weights_biases(weights_biases)
+                    val_pred = self.__predict(X_val)
+                    loss = cross_entropy_loss(val_pred, y_val)
+                    break
+            last_loss = loss
+            epoch += 1
         if verbose:
-            print("loss at end: {}".format(round(loss, 5)))
+            print("cross entropy loss at end: {}".format(round(loss, 5)))
 
-    def force_weights_biases(self, weights_biases):
+    def __force_weights_biases(self, weights_biases):
         for k, w_b in enumerate(weights_biases):
-            self.layers[k].weights = w_b["w"]
-            self.layers[k].biases = w_b["b"]
+            self.layers[k].weights, self.layers[k].biases = w_b
 
     def __backprop(self, errors):
         for n in reversed(range(1, self.nb_layers)):
             layer = self.layers[n]
             if not layer.is_network_output:
-                errors = self.layers[n+1].weights.T * self.layers[n+1].local_grad
+                errors = self.layers[n+1].weights.T *\
+                         self.layers[n+1].local_grad
             if layer.is_network_output:
-            #if True:
                 layer.local_grad = errors
             else:
                 if layer.activation.name == "tanh":
@@ -120,7 +129,8 @@ class Mlp(object):
                 elif layer.activation.name in ("logistic", "softmax"):
                     deriv = layer.neurals * (1 - layer.neurals)
                 else:
-                    deriv = layer.derivation(layer.aggregate(self.layers[n-1].neurals))
+                    deriv = layer.derivation(
+                        layer.aggregate(self.layers[n-1].neurals))
                 layer.local_grad = np.multiply(errors, deriv)
 
     def __weights_update(self, learning_rate, batch_size, momentum):

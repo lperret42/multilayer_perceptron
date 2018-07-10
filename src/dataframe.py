@@ -1,12 +1,7 @@
 import numpy as np
 import random
-from .utils import get_data, keep_only_float, quicksort, is_float, is_list_num,\
-                      sum_with_empty, mean_with_empty
-
-def read_csv(csvfile):
-    df = DataFrame()
-    df.data = get_data(csvfile)
-    return df
+from .utils import get_data, keep_only_float, quicksort, is_float,\
+                   is_list_num, sum_with_empty, mean_with_empty
 
 class DataFrame(object):
     def __init__(self, data={}):
@@ -16,10 +11,16 @@ class DataFrame(object):
         self.stand_coefs = {}
         self.numerical_features = []
 
-    def get_numerical_features(self, remove=["id"]):
+    @classmethod
+    def read_csv(cls, csvfile):
+        df = DataFrame()
+        df.data = get_data(csvfile)
+        return df
+
+    def set_numerical_features(self, to_remove=[]):
         self.numerical_features = []
         for feature, values in self.data.items():
-            if feature not in remove and is_list_num(values):
+            if feature not in to_remove and is_list_num(values):
                 self.numerical_features.append(feature)
 
     def get_description(self):
@@ -72,7 +73,7 @@ class DataFrame(object):
         df = DataFrame(data=self.filter(feature_value_to_filter=feature_value_to_filter))
         return df
 
-    def remove_nan(self, exception="diagnosis"):
+    def remove_nan(self, exception=""):
         self.data = self.filter(feature_value_to_filter={feature:"" for (feature, _) in
             self.data.items() if feature != exception}, to_keep=False)
 
@@ -101,17 +102,3 @@ class DataFrame(object):
                 self.stand_coefs[feature] = {"mu": mu, "sigma":sigma}
             else:
                 self.standardized[feature] = values
-
-    def train_test_split(self, train_ratio=0.8):
-        nb_rows = len(self.data["id"])
-        index = list(range(nb_rows))
-        random.shuffle(index)
-        index_train = index[:int(train_ratio * nb_rows)]
-        index_test = index[int(train_ratio * nb_rows):]
-        df_train, df_test = DataFrame(), DataFrame()
-        df_train.data = {feature: [values[i] for i in range(len(values)) if i in index_train]
-                                    for feature, values in self.data.items()}
-        df_test.data = {feature: [values[i] for i in range(len(values)) if i in index_test]
-                                    for feature, values in self.data.items()}
-
-        return df_train, df_test
