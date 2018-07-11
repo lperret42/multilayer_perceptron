@@ -34,7 +34,7 @@ def main():
     predictions = mlp.predict(X_test)
     y_test = [y[0] for y in y_test.T.tolist()]
     print_pred_vs_obs(predictions, y_test)
-    print("\nprecision:", pred_accuracy(predictions, y_test))
+    print("\naccuracy: {}%".format(100*round(pred_accuracy(predictions, y_test), 5)))
     return
 
 if __name__ == '__main__':
