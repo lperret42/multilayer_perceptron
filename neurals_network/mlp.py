@@ -18,7 +18,7 @@ class MlpClassifier(object):
         self.dim_output = dim_output
         self.__init_layers(activation, hidden_layer_sizes)
 
-    def fit(self, X, y, learning_rate=0.1, batch_size=64, max_epochs=256,
+    def fit(self, X, y, learning_rate=0.05, batch_size=64, max_epochs=256,
             momentum=0.9, early_stopping=32, val_ratio=0.15, verbose=False):
         X, y = self.__preprocess_data(X, y)
         X_train, y_train, X_val, y_val = train_test_split(

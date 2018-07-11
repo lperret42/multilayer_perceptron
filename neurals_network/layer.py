@@ -4,8 +4,8 @@ from toolbox.utils import get_uniform_matrix, get_normal_matrix
 
 class Layer(object):
     def __init__(self, size, input_size, activation="relu",
-                 weights_init=("uniform", -0.001, 0.001),
-                 biases_init=("uniform", -0.01, 0.01),
+                 weights_init=("uniform", -0.1, 0.1),
+                 biases_init=("uniform", -0.2, 0.2),
                  is_network_input=False,  is_network_output=False):
 
         self.activation_name = activation
