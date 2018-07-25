@@ -1,6 +1,14 @@
+from __future__ import print_function
 import csv
+from collections import OrderedDict
 from math import log
 import numpy as np
+
+def np_gray2rgb(img):
+    w, h = img.shape
+    ret = np.empty((w, h, 3), dtype=np.uint8)
+    ret[:, :, :] = img[:, :, np.newaxis]
+    return ret
 
 def train_test_split(X, y, train_ratio=0.8):
     X = np.matrix(X)
@@ -12,6 +20,16 @@ def train_test_split(X, y, train_ratio=0.8):
     X_train, X_test = X[:, index_train], X[:, index_test]
     y_train, y_test = y[:, index_train], y[:, index_test]
     return X_train, y_train, X_test, y_test
+
+def split_batch(batch, new_batch_size):
+    nb = batch.shape[1]
+    size = min(nb, new_batch_size)
+    batches = []
+    i = 0
+    while i * size < nb:
+        batches.append(batch[:, i * size: (i + 1) * size])
+        i += 1
+    return batches
 
 def mean_squared_error(predictions, observations):
     errors = observations - predictions
@@ -52,13 +70,18 @@ def get_normal_matrix(sizes, mu=0, sigma=1):
         weights = np.matrix(weights)
     return weights
 
-def print_pred_vs_obs(predictions, observations):
-    [print("predict: {:>12}    real: {:>12}".format(
-        pred, obs)) for pred, obs in zip(predictions, observations)]
+def print_pred_vs_obs(predictions, observations, only_false=False):
+    if isinstance(predictions[0], np.bytes_):
+        predictions = np.core.defchararray.decode(predictions, encoding='utf-8')
+    for pred, obs in zip(predictions, observations):
+        if pred != obs or not only_false:
+            print("predict: {:>12}    real: {:>12}".format(pred, obs))
 
 def pred_accuracy(predictions, observations):
-    return sum([1 if pred == obs else 0 for pred, obs in
-        zip(predictions, observations)]) / len(predictions)
+    if isinstance(predictions[0], np.bytes_):
+        predictions = np.core.defchararray.decode(predictions, encoding='utf-8')
+    return float(sum([1 if pred == obs else 0 for pred, obs in
+        zip(predictions, observations)])) / len(predictions)
 
 def pred_mean_error(predictions, observations):
     if len(predictions) == 0 or not is_float(predictions[0]):
@@ -80,7 +103,7 @@ def get_data(csv_file):
         lines  = [line for line in csv.reader(csvfile, delimiter=',')]
         csvfile.close()
 
-    data = {}
+    data = OrderedDict()
     features = lines[0]
     for feature in features:
         data[feature] = []
@@ -103,8 +126,11 @@ def is_list_num(lst):
             return False
     return True
 
+def is_constant(iterator):
+   return len(set(iterator)) <= 1
+
 def quicksort(lst, rev=False):
-    if len(lst) < 2:
+    if is_constant(lst) < 2:
         return lst
     else:
         pivot = lst[0] if rev == False else lst[-1]

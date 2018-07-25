@@ -6,6 +6,7 @@ setup(name="multilayer-perceptron",
       description="python3 implementation of a multilayer perceptron for\
                    multi classification",
       install_requires=[
+          'opencv-python',
           'numpy >=1.14',
       ],
       packages=find_packages(exclude=['examples']),

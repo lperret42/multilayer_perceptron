@@ -3,9 +3,9 @@ from neurals_network.activations import ACTIVATIONS
 from toolbox.utils import get_uniform_matrix, get_normal_matrix
 
 class Layer(object):
-    def __init__(self, size, input_size, activation="relu",
-                 weights_init=("uniform", -0.1, 0.1),
-                 biases_init=("uniform", -0.2, 0.2),
+    def __init__(self, size, input_size, activation="relu", dtype=np.float32,
+                 weights_init=("uniform", -1e-2, 1e-2),
+                 biases_init=("uniform", -1e-1, 1e-1),
                  is_network_input=False,  is_network_output=False):
 
         self.activation_name = activation
@@ -16,12 +16,11 @@ class Layer(object):
         self.is_network_output = is_network_output
         self.weights = np.array([])
         self.biases = np.array([])
-        self.d_weights = np.array([])
-        self.d_biases = np.array([])
         self.local_grad = np.array([])
 
         self.__init_activation(activation)
         self.__init_weights_biases_deltas(weights_init, biases_init)
+        self.__set_dtype(dtype)
 
     def aggregate(self, X):
         return self.weights.dot(X) + self.biases
@@ -37,6 +36,15 @@ class Layer(object):
             self.neurals = np.array(X)
         else:
             self.neurals = self.activate(self.aggregate(X))
+
+    def clean(self):
+        del self.neurals
+        del self.local_grad
+        if not self.is_network_input:
+            del self.d_weights
+            del self.d_biases
+            del self.d_weights_tmp
+            del self.d_biases_tmp
 
     def __init_activation(self, activation_name):
         if activation_name not in ACTIVATIONS:
@@ -64,6 +72,13 @@ class Layer(object):
                 raise Exception("{} biases init is not supported".format(w_init_str))
             self.d_weights = np.zeros((self.size, self.input_size))
             self.d_biases = np.zeros((self.size, 1))
+            self.d_weights_tmp = []
+            self.d_biases_tmp = []
+
+    def __set_dtype(self, dtype):
+        self.weights.astype(dtype, copy=False)
+        self.biases.astype(dtype, copy=False)
+        self.local_grad.astype(dtype, copy=False)
 
     def __str__(self):
         ret = ""

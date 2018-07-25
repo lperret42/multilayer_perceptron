@@ -1,9 +1,6 @@
 import argparse
-import numpy as np
-
 from toolbox import dataframe
-from toolbox.utils import train_test_split, print_pred_vs_obs, pred_accuracy,\
-                          pred_mean_error
+from toolbox.utils import train_test_split
 from neurals_network.mlp import MlpClassifier
 
 def parse_arguments():
@@ -24,25 +21,11 @@ def main():
     df.digitalize()
     X = [x for feature, x in df.data.items() if feature in df.numerical_features]
     y = df.data[output_label]
-    X_train, y_train, X_test, y_test = train_test_split(X, y, train_ratio=0.8)
-    mlp = MlpClassifier(
-        hidden_layer_sizes=None,
-    )
+    X_train, y_train, _, _ = train_test_split(X, y, train_ratio=1.0)
+    mlp = MlpClassifier()
     mlp.fit(X_train, y_train, verbose=args.verbose)
     model_name = output_label + ".pkl"
     mlp.dump(model_name=model_name, verbose=True)
-    #mlp = MlpClassifier.load("models/" + model_name)
-    if X_test.shape[1] == 0:
-        print("\nNo sample to test")
-        return
-    print("\nTest:")
-    predictions = mlp.predict(X_test)
-    y_test = [y[0] for y in y_test.T.tolist()]
-    print_pred_vs_obs(predictions, y_test)
-    print("\naccuracy: {}%".format(100*round(pred_accuracy(predictions, y_test), 5)))
-    mean_error = pred_mean_error(predictions, y_test)
-    if mean_error is not None:
-        print("\nmean error: {}".format(round(mean_error, 2)))
     return
 
 if __name__ == '__main__':

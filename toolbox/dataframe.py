@@ -1,13 +1,15 @@
-import numpy as np
+from __future__ import print_function
 import random
+from collections import OrderedDict
+import numpy as np
 from toolbox.utils import get_data, keep_only_float, quicksort, is_float,\
                    is_list_num, sum_with_empty, mean_with_empty
 
 class DataFrame(object):
-    def __init__(self, data={}):
+    def __init__(self, data=OrderedDict()):
         self.data = data
         self.description = {}
-        self.standardized= {}
+        self.standardized= OrderedDict()
         self.stand_coefs = {}
         self.numerical_features = []
 
@@ -53,15 +55,15 @@ class DataFrame(object):
         nb = len(self.description["Count"])
         order = ["Count", "Mean", "Std", "Min", "25%", "50%", "75%", "Max"]
         print("{:<10}".format(""), end="")
-        [print("{:>17}".format(self.description["Field"][n][:15]), end="") for
-         n in range(nb)]
-        print("")
+        for n in range(nb):
+            print("{:>17}".format(self.description["Field"][n][:15]), end="")
+        print('\n', end="")
         for elem in order:
             features = self.description[elem]
             print("{:<10}".format(elem), end="")
-            [print("{:17.6f}".format(round(features[n], 6)), end="") for
-             n in range(nb)]
-            print("")
+            for n in range(nb):
+                print("{:17.6f}".format(round(features[n], 6)), end="")
+            print('\n', end="")
 
     def filter(self, feature_value_to_filter={}, to_keep=True):
         index_to_del = []
