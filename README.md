@@ -6,4 +6,4 @@ https://reussirlem1info.files.wordpress.com/2012/05/mlp.pdf
 
 # How to use this software ?
 pip install . <br />
-python examples/train_test.py data/iris.csv -v
+python examples/train_test.py data/iris.csv iris -v
